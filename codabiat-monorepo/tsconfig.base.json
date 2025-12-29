@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "paths": {
+      "@codabiat/types": ["./packages/types/src"],
+      "@codabiat/types/*": ["./packages/types/src/*"],
+      "@codabiat/database": ["./packages/database/src"],
+      "@codabiat/database/*": ["./packages/database/src/*"],
+      "@codabiat/auth": ["./packages/auth/src"],
+      "@codabiat/auth/*": ["./packages/auth/src/*"],
+      "@codabiat/utils": ["./packages/utils/src"],
+      "@codabiat/utils/*": ["./packages/utils/src/*"]
+    }
+  },
+  "exclude": ["node_modules", "dist", ".next", "build"]
+}

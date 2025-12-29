@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-nx-workspace:*)",
+      "Bash(npx --yes create-nx-workspace@latest:*)",
+      "Bash(npm install:*)",
+      "Bash(npx nx g:*)",
+      "Bash(tree:*)",
+      "Bash(npx nx serve:*)",
+      "Bash(npx nx show:*)",
+      "Bash(npm run dev:web:*)",
+      "Bash(npm uninstall:*)"
+    ]
+  }
+}
