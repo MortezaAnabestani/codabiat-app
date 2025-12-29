@@ -1,5 +1,16 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Wind, Activity, Zap, MousePointer2, RefreshCw, Settings2, Grid, Circle } from "lucide-react";
+import {
+  Wind,
+  Activity,
+  Zap,
+  MousePointer2,
+  RefreshCw,
+  Settings2,
+  Grid,
+  Circle,
+  PenTool,
+  Hand,
+} from "lucide-react";
 
 interface Particle {
   x: number;
@@ -12,7 +23,7 @@ interface Particle {
   size: number;
   color: string;
   history: { x: number; y: number }[];
-  baseX: number; // For return-to-origin behaviors
+  baseX: number;
   baseY: number;
 }
 
@@ -40,13 +51,22 @@ export const AdvancedKineticModule: React.FC = () => {
     const height = containerRef.current.clientHeight;
 
     const words = text.split(" ").filter((w) => w.length > 0);
-    // If text is short, repeat it to fill screen
     let fillWords = [...words];
     while (fillWords.length < 30) {
       fillWords = [...fillWords, ...words];
     }
 
     const newParticles: Particle[] = fillWords.map((word, i) => {
+      // Comix Zone Palette for Particles
+      const colors = [
+        "#E07000", // Mutant Orange
+        "#00FF00", // Rad Green
+        "#FFFFFF", // Sketch White
+        "#FFCC00", // Narrator Yellow
+        "#00FFFF", // Sega Cyan
+      ];
+      const randomColor = colors[Math.floor(Math.random() * colors.length)];
+
       return {
         x: Math.random() * width,
         y: Math.random() * height,
@@ -55,8 +75,8 @@ export const AdvancedKineticModule: React.FC = () => {
         ax: 0,
         ay: 0,
         text: word,
-        size: 14 + Math.random() * 20, // Variable font size
-        color: `hsl(${Math.random() * 60 + 160}, 100%, 70%)`, // Cyan to Blue range
+        size: 14 + Math.random() * 20,
+        color: randomColor,
         history: [],
         baseX: (width / fillWords.length) * i + Math.random() * 50,
         baseY: height / 2 + (Math.random() - 0.5) * 200,
@@ -85,24 +105,27 @@ export const AdvancedKineticModule: React.FC = () => {
       const width = container.clientWidth;
       const height = container.clientHeight;
 
-      // Handle Resize
       if (canvas.width !== width || canvas.height !== height) {
         canvas.width = width;
         canvas.height = height;
       }
 
-      // Fade effect for trails
-      ctx.fillStyle = showTrails ? "rgba(5, 5, 5, 0.2)" : "rgba(5, 5, 5, 1)";
+      // Background: Ink Black for the panel content
+      ctx.fillStyle = showTrails ? "rgba(20, 20, 25, 0.2)" : "rgba(20, 20, 25, 1)";
       ctx.fillRect(0, 0, width, height);
+
+      // Add a subtle halftone pattern effect (optional visual flair)
+      ctx.fillStyle = "rgba(0,0,0,0.1)";
+      for (let i = 0; i < width; i += 4) {
+        ctx.fillRect(i, 0, 1, height);
+      }
 
       const particles = particlesRef.current;
       const mouse = mouseRef.current;
 
-      // Update Physics
       particles.forEach((p, i) => {
-        // Mode Behaviors
+        // --- PHYSICS LOGIC (UNCHANGED) ---
         if (mode === "fluid") {
-          // Repel from mouse
           if (mouse.active) {
             const dx = p.x - mouse.x;
             const dy = p.y - mouse.y;
@@ -113,11 +136,9 @@ export const AdvancedKineticModule: React.FC = () => {
               p.ay += (dy / dist) * force * 0.5;
             }
           }
-          // Gentle wander
           p.ax += (Math.random() - 0.5) * 0.1;
           p.ay += (Math.random() - 0.5) * 0.1;
         } else if (mode === "magnet") {
-          // Attract to mouse
           const targetX = mouse.active ? mouse.x : width / 2;
           const targetY = mouse.active ? mouse.y : height / 2;
           const dx = targetX - p.x;
@@ -125,26 +146,20 @@ export const AdvancedKineticModule: React.FC = () => {
           p.ax += dx * 0.0005;
           p.ay += dy * 0.0005;
         } else if (mode === "vortex") {
-          // Swirl around center
           const centerX = width / 2;
           const centerY = height / 2;
           const dx = p.x - centerX;
           const dy = p.y - centerY;
           const dist = Math.sqrt(dx * dx + dy * dy);
-
-          // Tangent force
           p.ax += -dy * 0.0001 + (centerX - p.x) * 0.0001;
           p.ay += dx * 0.0001 + (centerY - p.y) * 0.0001;
         } else if (mode === "grid") {
-          // Return to base
-          const k = 0.05; // Spring constant
+          const k = 0.05;
           const damping = 0.9;
           const ax = (p.baseX - p.x) * k;
           const ay = (p.baseY - p.y) * k;
           p.ax += ax;
           p.ay += ay;
-
-          // Mouse disturbance
           if (mouse.active) {
             const dx = p.x - mouse.x;
             const dy = p.y - mouse.y;
@@ -157,15 +172,11 @@ export const AdvancedKineticModule: React.FC = () => {
           }
         }
 
-        // Apply Physics
         p.vx += p.ax;
         p.vy += p.ay;
-
-        // Friction
         p.vx *= mode === "grid" ? 0.9 : 0.96;
         p.vy *= mode === "grid" ? 0.9 : 0.96;
 
-        // Speed Limit
         const velocity = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
         if (velocity > 10 * speed) {
           p.vx = (p.vx / velocity) * 10 * speed;
@@ -174,12 +185,9 @@ export const AdvancedKineticModule: React.FC = () => {
 
         p.x += p.vx * speed;
         p.y += p.vy * speed;
-
-        // Reset accel
         p.ax = 0;
         p.ay = 0;
 
-        // Boundaries (Wrap or Bounce)
         if (mode !== "grid") {
           if (p.x < -50) p.x = width + 50;
           if (p.x > width + 50) p.x = -50;
@@ -187,17 +195,16 @@ export const AdvancedKineticModule: React.FC = () => {
           if (p.y > height + 50) p.y = -50;
         }
 
-        // History for trails
         if (showTrails) {
           p.history.push({ x: p.x, y: p.y });
           if (p.history.length > 5) p.history.shift();
         }
       });
 
-      // Draw Connections (Constellation Effect)
+      // Draw Connections (Rough Sketch Lines)
       if (connectionDistance > 0 && mode !== "grid") {
         ctx.beginPath();
-        ctx.strokeStyle = "rgba(0, 255, 255, 0.15)";
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.2)"; // Sketchy white lines
         for (let i = 0; i < particles.length; i++) {
           for (let j = i + 1; j < particles.length; j++) {
             const dx = particles[i].x - particles[j].x;
@@ -216,7 +223,6 @@ export const AdvancedKineticModule: React.FC = () => {
       particles.forEach((p) => {
         ctx.save();
 
-        // Draw Trail
         if (showTrails && p.history.length > 1) {
           ctx.beginPath();
           ctx.moveTo(p.history[0].x, p.history[0].y);
@@ -224,27 +230,36 @@ export const AdvancedKineticModule: React.FC = () => {
             ctx.lineTo(p.history[i].x, p.history[i].y);
           }
           ctx.strokeStyle = p.color;
-          ctx.globalAlpha = 0.3;
+          ctx.globalAlpha = 0.5;
           ctx.lineWidth = 2;
           ctx.stroke();
         }
 
-        // Draw Text
         ctx.translate(p.x, p.y);
         const velocity = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
         const rotation = Math.atan2(p.vy, p.vx);
 
-        // Rotate based on movement if fast
         if (mode === "fluid" && velocity > 2) ctx.rotate(rotation);
 
+        // Comic Style Text Rendering
         ctx.fillStyle = p.color;
-        ctx.globalAlpha = Math.min(1, 0.6 + velocity / 10);
-        ctx.shadowColor = p.color;
-        ctx.shadowBlur = velocity * 2;
-        ctx.font = `bold ${p.size}px "Vazirmatn"`;
+        ctx.globalAlpha = 1;
+        // Hard shadow for comic pop
+        ctx.shadowColor = "#000000";
+        ctx.shadowOffsetX = 2;
+        ctx.shadowOffsetY = 2;
+        ctx.shadowBlur = 0;
+
+        // Use a monospace font to simulate pixel/typewriter text
+        ctx.font = `bold ${p.size}px "Courier New", monospace`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillText(p.text, 0, 0);
+
+        // Outline for readability (Comic style)
+        ctx.strokeStyle = "black";
+        ctx.lineWidth = 1;
+        ctx.strokeText(p.text, 0, 0);
 
         ctx.restore();
       });
@@ -272,131 +287,170 @@ export const AdvancedKineticModule: React.FC = () => {
   };
 
   return (
-    <div className="h-full flex flex-col relative overflow-hidden bg-[#050505] group">
-      {/* Background Texture */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-cyan-900/10 via-black to-black "></div>
+    // THE VOID (Artist's Desk Background)
+    <div className="h-full  flex flex-col relative overflow-hidden bg-[#500050] p-4 font-mono select-none">
+      {/* Background Texture (Subtle Grunge) */}
+      <div className="absolute inset-0 opacity-20  bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')]"></div>
 
-      {/* Canvas */}
-      <div
-        ref={containerRef}
-        className="w-full h-full relative z-0 cursor-none"
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
-      >
-        <canvas ref={canvasRef} className="block" />
+      {/* MAIN COMIC PANEL (Canvas) */}
+      <div className="flex-grow relative z-10 mb-4 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)]">
+        {/* Panel Border */}
+        <div className="absolute inset-0 border-4 border-black  z-20"></div>
 
-        {/* Custom Cursor */}
+        {/* Panel Header (Episode Title) */}
+        <div className="absolute top-0 left-0 bg-yellow-400 border-b-4 border-r-4 border-black px-4 py-1 z-30">
+          <h2 className="text-black font-black text-xs tracking-widest uppercase transform -skew-x-12">
+            EPISODE 1: KINETIC WORDS
+          </h2>
+        </div>
+
         <div
-          className=" fixed w-8 h-8 border border-cyan-500 rounded-full -translate-x-1/2 -translate-y-1/2 mix-blend-difference z-50 transition-transform duration-75"
-          style={{
-            left: mouseRef.current.x,
-            top: mouseRef.current.y,
-            opacity: mouseRef.current.active ? 1 : 0,
-          }}
-        />
-      </div>
+          ref={containerRef}
+          className="w-full h-full relative bg-[#1a1a1a] cursor-none overflow-hidden"
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+        >
+          <canvas ref={canvasRef} className="block" />
 
-      {/* Professional HUD */}
-      <div className="absolute bottom-4 left-4 right-4 md:left-auto md:right-6 md:w-80 md:bottom-auto md:top-6 z-20 flex flex-col gap-3">
-        {/* Main Control Panel */}
-        <div className="bg-black/70 backdrop-blur-xl border border-cyan-500/30 rounded-lg p-4 shadow-[0_0_30px_rgba(6,182,212,0.1)]">
-          <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-4">
-            <h3 className="text-cyan-400 font-display text-sm flex items-center gap-2">
-              <Wind size={16} /> شعر جنبشی
-            </h3>
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 bg-cyan-500 rounded-full animate-pulse"></span>
-              <span className="font-mono text-[10px] text-gray-500">KINETIC_ENG_V3</span>
+          {/* MORTUS HAND (Custom Cursor) */}
+          <div
+            className="fixed  z-50 transition-transform duration-75"
+            style={{
+              left: mouseRef.current.x,
+              top: mouseRef.current.y,
+              opacity: mouseRef.current.active ? 1 : 0,
+              transform: `translate(-10%, -10%) rotate(-15deg) scale(${mouseRef.current.active ? 1.2 : 1})`,
+            }}
+          >
+            {/* Using PenTool to simulate the Artist's Hand */}
+            <div className="relative">
+              <PenTool
+                size={48}
+                className="text-white drop-shadow-[4px_4px_0px_rgba(0,0,0,1)] fill-orange-500"
+                strokeWidth={2.5}
+              />
+              {/* Spark effect */}
+              <div className="absolute -top-2 -left-2 w-4 h-4 bg-yellow-400 animate-ping rounded-full opacity-75"></div>
             </div>
           </div>
+        </div>
+      </div>
 
-          {/* Mode Selectors */}
-          <div className="grid grid-cols-4 gap-2 mb-4">
+      {/* THE INVENTORY (Controls UI) */}
+      <div className="relative z-20 bg-white border-4 border-black p-4 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+        {/* "Inventory" Grid Layout */}
+        <div className="flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
+          {/* LEFT: Mode Selectors (Item Slots) */}
+          <div className="flex gap-3">
             {[
               { id: "fluid", icon: Activity, label: "FLUID" },
               { id: "vortex", icon: RefreshCw, label: "VORTEX" },
               { id: "magnet", icon: Zap, label: "MAGNET" },
               { id: "grid", icon: Grid, label: "ORDER" },
             ].map((m) => (
-              <button
-                key={m.id}
-                onClick={() => setMode(m.id as Mode)}
-                className={`flex flex-col items-center justify-center p-2 rounded border transition-all ${
-                  mode === m.id
-                    ? "bg-cyan-500/20 border-cyan-500 text-cyan-400 shadow-[0_0_10px_rgba(6,182,212,0.2)]"
-                    : "border-white/5 text-gray-500 hover:bg-white/5 hover:text-white"
-                }`}
-              >
-                <m.icon size={14} className="mb-1" />
-                <span className="text-[8px] font-mono">{m.label}</span>
-              </button>
+              <div key={m.id} className="flex flex-col items-center gap-1">
+                <button
+                  onClick={() => setMode(m.id as Mode)}
+                  className={`w-12 h-12 border-4 flex items-center justify-center transition-transform active:scale-95 ${
+                    mode === m.id
+                      ? "bg-yellow-400 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] translate-y-[-2px]"
+                      : "bg-gray-800 border-gray-600 text-gray-500 hover:bg-gray-700"
+                  }`}
+                >
+                  <m.icon
+                    size={20}
+                    className={mode === m.id ? "text-black" : "text-gray-400"}
+                    strokeWidth={3}
+                  />
+                </button>
+                <span className="text-[10px] font-bold bg-black text-white px-1 uppercase">{m.label}</span>
+              </div>
             ))}
           </div>
 
-          {/* Sliders */}
-          <div className="space-y-4 mb-4">
-            <div>
-              <div className="flex justify-between text-[10px] font-mono text-gray-400 mb-1">
-                <span className="flex items-center gap-1">
-                  <Settings2 size={10} /> VELOCITY
-                </span>
-                <span>{speed.toFixed(1)}x</span>
+          {/* CENTER: Sliders (Health Bars) */}
+          <div className="flex-grow w-full md:w-auto space-y-3 px-4">
+            {/* Speed Slider */}
+            <div className="flex items-center gap-2">
+              <span className="bg-black text-white text-[10px] px-1 font-bold w-16 text-center">
+                VELOCITY
+              </span>
+              <div className="flex-grow relative h-4 bg-gray-300 border-2 border-black">
+                <div
+                  className="absolute top-0 left-0 h-full bg-[#E07000]"
+                  style={{ width: `${(speed / 3) * 100}%` }}
+                ></div>
+                <input
+                  type="range"
+                  min="0.1"
+                  max="3"
+                  step="0.1"
+                  value={speed}
+                  onChange={(e) => setSpeed(Number(e.target.value))}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
               </div>
-              <input
-                type="range"
-                min="0.1"
-                max="3"
-                step="0.1"
-                value={speed}
-                onChange={(e) => setSpeed(Number(e.target.value))}
-                className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-500"
-              />
+              <span className="text-xs font-bold">{speed.toFixed(1)}x</span>
             </div>
-            <div>
-              <div className="flex justify-between text-[10px] font-mono text-gray-400 mb-1">
-                <span className="flex items-center gap-1">
-                  <Circle size={10} /> LINK_DISTANCE
-                </span>
-                <span>{connectionDistance}px</span>
+
+            {/* Distance Slider */}
+            <div className="flex items-center gap-2">
+              <span className="bg-black text-white text-[10px] px-1 font-bold w-16 text-center">
+                LINK_DIST
+              </span>
+              <div className="flex-grow relative h-4 bg-gray-300 border-2 border-black">
+                <div
+                  className="absolute top-0 left-0 h-full bg-[#006000]"
+                  style={{ width: `${(connectionDistance / 200) * 100}%` }}
+                ></div>
+                <input
+                  type="range"
+                  min="0"
+                  max="200"
+                  step="10"
+                  value={connectionDistance}
+                  onChange={(e) => setConnectionDistance(Number(e.target.value))}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
               </div>
-              <input
-                type="range"
-                min="0"
-                max="200"
-                step="10"
-                value={connectionDistance}
-                onChange={(e) => setConnectionDistance(Number(e.target.value))}
-                className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-500"
-              />
+              <span className="text-xs font-bold">{connectionDistance}</span>
             </div>
           </div>
 
-          {/* Text Input */}
-          <div className="relative">
-            <input
-              type="text"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              className="w-full bg-black/40 border border-white/10 p-2 pl-8 text-xs text-cyan-100 rounded focus:border-cyan-500 outline-none transition-colors"
-              dir="rtl"
-            />
-            <div className="absolute left-2 top-2.5 text-gray-500 ">
-              <MousePointer2 size={12} />
+          {/* RIGHT: Text Input (Narrator Box) */}
+          <div className="w-full md:w-64 flex flex-col gap-2">
+            <div className="relative group">
+              <div className="absolute -top-3 left-2 bg-yellow-400 border-2 border-black px-2 text-[10px] font-bold z-10">
+                NARRATIVE INPUT
+              </div>
+              <input
+                type="text"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                className="w-full bg-white border-4 border-black p-3 text-sm font-bold text-black focus:bg-yellow-50 focus:outline-none shadow-[4px_4px_0px_0px_rgba(200,200,200,1)] focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all"
+                dir="rtl"
+              />
+              <MousePointer2
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-black opacity-20"
+                size={16}
+              />
+            </div>
+
+            {/* Stats / Toggle */}
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] font-bold text-gray-600">
+                PARTICLES: <span className="text-red-600">{particleCount}</span>
+              </span>
+              <button
+                onClick={() => setShowTrails(!showTrails)}
+                className={`text-[10px] font-bold px-2 py-1 border-2 border-black transition-all ${
+                  showTrails ? "bg-[#006000] text-white" : "bg-gray-200 text-gray-500"
+                }`}
+              >
+                TRAILS: {showTrails ? "ON" : "OFF"}
+              </button>
             </div>
           </div>
-        </div>
-
-        {/* Info Bar */}
-        <div className="bg-black/70 backdrop-blur-md border border-white/10 rounded-lg p-2 flex justify-between items-center px-4">
-          <span className="text-[10px] text-gray-500 font-mono">PARTICLES: {particleCount}</span>
-          <button
-            onClick={() => setShowTrails(!showTrails)}
-            className={`text-[10px] font-mono px-2 py-1 rounded border transition-colors ${
-              showTrails ? "border-cyan-500 text-cyan-400 bg-cyan-500/10" : "border-gray-700 text-gray-500"
-            }`}
-          >
-            TRAILS: {showTrails ? "ON" : "OFF"}
-          </button>
         </div>
       </div>
     </div>

@@ -1,19 +1,18 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Music,
   Activity,
   Zap,
   Play,
   Square,
-  Settings2,
-  Volume2,
-  Wind,
-  Repeat,
-  Waves,
-  Radio,
   Sliders,
-  Share2,
   Download,
+  Hand,
+  Skull,
+  Bomb,
+  Radio,
+  Waves,
+  Repeat,
 } from "lucide-react";
 
 interface SynthSettings {
@@ -49,7 +48,7 @@ export const SonificationModule: React.FC = () => {
   const animationRef = useRef<number>(0);
   const isActiveRef = useRef(false);
 
-  // --- Audio System Core ---
+  // --- Audio System Core (UNCHANGED LOGIC) ---
   const initAudio = () => {
     if (!audioCtxRef.current) {
       audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -72,17 +71,14 @@ export const SonificationModule: React.FC = () => {
     const chars = text.split("");
     let startTime = ctx.currentTime;
 
-    // Master Chain
     const masterOut = ctx.createGain();
     masterOut.gain.value = 0.5;
 
-    // Filter
     const filter = ctx.createBiquadFilter();
     filter.type = "lowpass";
     filter.frequency.value = settings.filterFreq;
     filter.Q.value = settings.filterRes;
 
-    // Delay
     const delay = ctx.createDelay();
     delay.delayTime.value = settings.delayTime;
     const feedback = ctx.createGain();
@@ -91,12 +87,10 @@ export const SonificationModule: React.FC = () => {
     delay.connect(feedback);
     feedback.connect(delay);
 
-    // Connections
     masterOut.connect(filter);
     filter.connect(ctx.destination);
     filter.connect(analyzer);
 
-    // Parallel Delay
     filter.connect(delay);
     delay.connect(ctx.destination);
 
@@ -104,7 +98,6 @@ export const SonificationModule: React.FC = () => {
       if (!isActiveRef.current) break;
 
       const charCode = chars[i].charCodeAt(0);
-      // Map char code to a musical frequency (Persian range simulation)
       const freq = 100 + (charCode % 800);
       const duration = 0.4;
       const timeSlot = startTime + i * 0.25;
@@ -114,11 +107,8 @@ export const SonificationModule: React.FC = () => {
 
       osc.type = settings.waveType;
       osc.frequency.setValueAtTime(freq, timeSlot);
-
-      // Glissando effect (slight slide)
       osc.frequency.exponentialRampToValueAtTime(freq * 1.02, timeSlot + duration);
 
-      // ADSR Envelope
       env.gain.setValueAtTime(0, timeSlot);
       env.gain.linearRampToValueAtTime(1, timeSlot + settings.attack);
       env.gain.linearRampToValueAtTime(settings.sustain, timeSlot + settings.attack + settings.decay);
@@ -146,7 +136,7 @@ export const SonificationModule: React.FC = () => {
     }
   };
 
-  // --- Visualizer Loop ---
+  // --- Visualizer Loop (STYLED FOR COMIX ZONE) ---
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -158,18 +148,34 @@ export const SonificationModule: React.FC = () => {
       const w = canvas.width;
       const h = canvas.height;
 
-      // Translucent clear for motion blur
-      ctx.fillStyle = "rgba(5, 5, 5, 0.2)";
+      // Background: Dark "Ink" fill
+      ctx.fillStyle = "#111111";
       ctx.fillRect(0, 0, w, h);
 
+      // Grid Lines (Comic Halftone effect simulation)
+      ctx.strokeStyle = "rgba(80, 0, 80, 0.3)"; // Bruised Purple lines
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (let i = 0; i < w; i += 40) {
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i, h);
+      }
+      for (let j = 0; j < h; j += 40) {
+        ctx.moveTo(0, j);
+        ctx.lineTo(w, j);
+      }
+      ctx.stroke();
+
       if (!analyzerRef.current || !isPlaying) {
-        // Draw idle line
+        // Idle Line: Flatline style
         ctx.beginPath();
-        ctx.strokeStyle = "rgba(139, 92, 246, 0.2)";
+        ctx.strokeStyle = "#555";
+        ctx.setLineDash([5, 5]);
         ctx.lineWidth = 2;
         ctx.moveTo(0, h / 2);
         ctx.lineTo(w, h / 2);
         ctx.stroke();
+        ctx.setLineDash([]);
         return;
       }
 
@@ -177,11 +183,12 @@ export const SonificationModule: React.FC = () => {
       const dataArray = new Uint8Array(bufferLength);
       analyzerRef.current.getByteTimeDomainData(dataArray);
 
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = "#a855f7";
-      ctx.shadowBlur = 15;
-      ctx.shadowColor = "#a855f7";
+      // Waveform Style: "Mutant Orange" Energy
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = "#E07000"; // Primary Brand Color
+      ctx.shadowBlur = 0; // No soft glow, hard edges for comic style
 
+      // Add a second outline for "Ink" effect
       ctx.beginPath();
       const sliceWidth = w / bufferLength;
       let x = 0;
@@ -197,7 +204,6 @@ export const SonificationModule: React.FC = () => {
 
       ctx.lineTo(w, h / 2);
       ctx.stroke();
-      ctx.shadowBlur = 0;
     };
 
     draw();
@@ -205,251 +211,280 @@ export const SonificationModule: React.FC = () => {
   }, [isPlaying]);
 
   return (
-    <div className="h-full flex flex-col p-4 md:p-8 overflow-hidden bg-[#050505]">
-      {/* Header / HUD */}
-      <div className="flex justify-between items-center border-b border-violet-500/20 pb-4 mb-6 shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="p-3 bg-violet-500/10 rounded-xl text-violet-400">
-            <Music size={28} />
-          </div>
-          <div>
-            <h2 className="text-violet-400 font-display text-3xl">سنتز عصبی کلمات</h2>
-            <p className="text-[10px] font-mono text-gray-500 uppercase tracking-widest">
-              Neural_Sonification_v4.0 // Audio_Engine
-            </p>
-          </div>
+    // [1. VISUAL FIDELITY] The "Void" Background (Artist's Desk)
+    <div className="h-full flex flex-col p-4 md:p-8 overflow-hidden bg-[#222] relative font-mono">
+      {/* Texture Overlay */}
+      <div
+        className="absolute inset-0 opacity-10 pointer-events-none"
+        style={{ backgroundImage: "radial-gradient(#555 1px, transparent 1px)", backgroundSize: "20px 20px" }}
+      ></div>
+
+      {/* [4. UI MAPPING] Header / Inventory Slots */}
+      <div className="flex justify-between items-end mb-6 shrink-0 z-10">
+        {/* Narrator Box */}
+        <div className="bg-[#FFCC00] border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-3 transform -rotate-1">
+          <h2 className="text-black font-black text-2xl uppercase tracking-tighter flex items-center gap-2">
+            <Music size={24} className="text-black" />
+            EPISODE 1: SONIFICATION
+          </h2>
+          <p className="text-xs font-bold text-black/80 uppercase">SEGA_GENESIS_VDP // AUDIO_ENGINE</p>
         </div>
-        <div className="hidden md:flex gap-4">
-          <div className="flex flex-col items-end">
-            <span className="text-[10px] font-mono text-gray-600">SAMPLE_RATE</span>
-            <span className="text-xs text-violet-400 font-mono">48000 Hz</span>
+
+        {/* Inventory System (Controls) */}
+        <div className="flex gap-2 items-end">
+          {/* Slot 1: Status */}
+          <div className="hidden md:flex flex-col items-center">
+            <div className="bg-black text-[#E07000] text-[10px] px-2 py-1 mb-1 font-bold border border-[#E07000]">
+              STATUS
+            </div>
+            <div
+              className={`w-12 h-12 border-4 border-black bg-gray-800 flex items-center justify-center ${
+                isPlaying ? "animate-pulse bg-[#500050]" : ""
+              }`}
+            >
+              <Radio size={24} className={isPlaying ? "text-[#E07000]" : "text-gray-500"} />
+            </div>
           </div>
-          <div className="w-[1px] h-8 bg-white/10"></div>
-          <div className="flex items-center gap-2 bg-violet-900/20 px-4 py-2 rounded-lg border border-violet-500/20">
-            <Radio size={14} className={isPlaying ? "text-red-500 animate-pulse" : "text-gray-500"} />
-            <span className="text-[10px] font-mono text-gray-300">
-              {isPlaying ? "STREAMING_SIGNAL" : "STANDBY"}
-            </span>
+
+          {/* Slot 2: Action (Play/Stop) */}
+          <div
+            className="flex flex-col items-center group cursor-pointer"
+            onClick={isPlaying ? stopAudio : playNeuralSynth}
+          >
+            <div className="bg-black text-white text-[10px] px-2 py-1 mb-1 font-bold group-hover:text-[#FFCC00] transition-colors">
+              ACTION
+            </div>
+            <div className="w-16 h-16 border-4 border-black bg-[#E07000] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center active:translate-y-1 active:shadow-none transition-all">
+              {isPlaying ? (
+                <Bomb size={32} className="text-black animate-bounce" />
+              ) : (
+                <Hand size={32} className="text-black" />
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-8 flex-grow overflow-hidden">
-        {/* Right Panel: Controls */}
-        <div className="w-full lg:w-80 flex flex-col gap-4 overflow-y-auto custom-scrollbar pr-2 shrink-0">
-          {/* Input Area */}
-          <div className="bg-panel-black border border-white/10 p-5 rounded-2xl relative overflow-hidden group">
-            <div className="absolute top-0 left-0 w-1 h-full bg-violet-500 opacity-50 group-focus-within:opacity-100 transition-opacity"></div>
-            <label className="text-[10px] font-mono text-gray-500 mb-2 block uppercase tracking-tighter">
-              Text_Source_Buffer
-            </label>
-            <textarea
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              className="w-full bg-transparent text-white font-sans text-lg outline-none resize-none h-24"
-              placeholder="متنی برای تبدیل به فرکانس بنویسید..."
-              dir="rtl"
-            />
-            <div className="flex justify-between items-center mt-2 pt-2 border-t border-white/5">
-              <span className="text-[9px] text-gray-600 font-mono">CHARS: {text.length}</span>
-              <div className="flex gap-2">
+      {/* Main Comic Page Layout */}
+      <div className="flex flex-col lg:flex-row gap-6 flex-grow overflow-hidden z-10">
+        {/* [PANEL 1] Left: Controls & Input */}
+        <div className="w-full lg:w-96 flex flex-col gap-6 overflow-y-auto custom-scrollbar pr-2 shrink-0">
+          {/* Speech Bubble Input */}
+          <div className="relative">
+            <div className="bg-white border-4 border-black rounded-[2rem] rounded-br-none p-6 shadow-[8px_8px_0px_0px_rgba(80,0,80,1)]">
+              <label className="text-xs font-black text-black mb-2 block uppercase bg-[#FFCC00] inline-block px-2 border-2 border-black transform -rotate-2">
+                DIALOGUE INPUT
+              </label>
+              <textarea
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                className="w-full bg-transparent text-black font-bold text-lg outline-none resize-none h-24 placeholder-gray-400"
+                placeholder="متن را وارد کنید..."
+                dir="rtl"
+                style={{ fontFamily: "monospace" }}
+              />
+              <div className="flex justify-between items-center mt-2 border-t-2 border-dashed border-gray-300 pt-2">
+                <span className="text-[10px] font-black text-gray-500">CHARS: {text.length}</span>
                 <button
                   onClick={() => setText("")}
-                  className="text-[9px] text-gray-500 hover:text-white transition-colors uppercase"
+                  className="text-xs font-bold text-red-600 hover:underline uppercase"
                 >
-                  Clear
+                  ERASE
                 </button>
               </div>
             </div>
+            {/* Bubble Tail */}
+            <div className="absolute -bottom-4 right-8 w-8 h-8 bg-white border-r-4 border-b-4 border-black transform rotate-45"></div>
           </div>
 
-          {/* Synth Parameters */}
-          <div className="bg-panel-black border border-white/10 p-5 rounded-2xl space-y-6">
-            <div className="flex items-center justify-between border-b border-white/10 pb-2">
-              <h3 className="text-gray-300 font-bold text-sm flex items-center gap-2">
-                <Sliders size={14} className="text-violet-400" /> پارامترهای صوتی
-              </h3>
-              <div className="flex gap-1">
-                {(["sine", "square", "sawtooth"] as OscillatorType[]).map((type) => (
-                  <button
-                    key={type}
-                    onClick={() => setSettings({ ...settings, waveType: type })}
-                    className={`w-6 h-6 flex items-center justify-center rounded border transition-all ${
-                      settings.waveType === type
-                        ? "bg-violet-500 border-violet-500 text-black"
-                        : "border-white/10 text-gray-500 hover:text-white"
-                    }`}
-                    title={type}
-                  >
-                    <Waves size={12} />
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* ADSR Sliders */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <div className="flex justify-between text-[9px] font-mono text-gray-500 uppercase">
-                  <span>Attack</span>
-                  <span>{settings.attack}s</span>
-                </div>
-                <input
-                  type="range"
-                  min="0.01"
-                  max="1"
-                  step="0.01"
-                  value={settings.attack}
-                  onChange={(e) => setSettings({ ...settings, attack: Number(e.target.value) })}
-                  className="w-full h-1 accent-violet-500"
-                />
-              </div>
-              <div className="space-y-1">
-                <div className="flex justify-between text-[9px] font-mono text-gray-500 uppercase">
-                  <span>Release</span>
-                  <span>{settings.release}s</span>
-                </div>
-                <input
-                  type="range"
-                  min="0.01"
-                  max="2"
-                  step="0.1"
-                  value={settings.release}
-                  onChange={(e) => setSettings({ ...settings, release: Number(e.target.value) })}
-                  className="w-full h-1 accent-violet-500"
-                />
-              </div>
-            </div>
-
-            {/* Filter & Delay */}
-            <div className="space-y-4 pt-2">
-              <div className="space-y-1">
-                <div className="flex justify-between text-[10px] font-mono text-violet-300 uppercase">
-                  <span>Low-Pass Filter</span>
-                  <span>{settings.filterFreq}Hz</span>
-                </div>
-                <input
-                  type="range"
-                  min="200"
-                  max="10000"
-                  step="100"
-                  value={settings.filterFreq}
-                  onChange={(e) => setSettings({ ...settings, filterFreq: Number(e.target.value) })}
-                  className="w-full h-1 accent-violet-500 bg-gray-800 rounded-lg appearance-none cursor-pointer"
-                />
-              </div>
-              <div className="space-y-1">
-                <div className="flex justify-between text-[10px] font-mono text-violet-300 uppercase">
-                  <span>Feedback Delay</span>
-                  <span>{Math.floor(settings.delayFeedback * 100)}%</span>
-                </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="0.8"
-                  step="0.05"
-                  value={settings.delayFeedback}
-                  onChange={(e) => setSettings({ ...settings, delayFeedback: Number(e.target.value) })}
-                  className="w-full h-1 accent-violet-500 bg-gray-800 rounded-lg appearance-none cursor-pointer"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Master Actions */}
-          <div className="flex gap-3">
-            {isPlaying ? (
-              <button
-                onClick={stopAudio}
-                className="flex-grow py-4 bg-red-600 hover:bg-red-500 text-white font-bold rounded-2xl flex items-center justify-center gap-3 transition-all shadow-[0_0_20px_rgba(220,38,38,0.3)]"
-              >
-                <Square size={20} fill="white" /> توقف سیگنال
-              </button>
-            ) : (
-              <button
-                onClick={playNeuralSynth}
-                className="flex-grow py-4 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-2xl flex items-center justify-center gap-3 transition-all shadow-[0_0_20px_rgba(139,92,246,0.3)]"
-              >
-                <Play size={20} fill="white" /> آغاز سنتز صدا
-              </button>
-            )}
-            <button className="p-4 bg-white/5 border border-white/10 rounded-2xl text-gray-400 hover:text-white transition-all">
-              <Download size={20} />
-            </button>
-          </div>
-        </div>
-
-        {/* Left Panel: Visualization */}
-        <div className="flex-grow flex flex-col gap-4 overflow-hidden">
-          {/* Main Oscilloscope */}
-          <div className="flex-grow bg-[#050505] border border-white/10 rounded-3xl relative overflow-hidden flex items-center justify-center">
-            {/* Grid Overlay */}
-            <div className="absolute inset-0 bg-[linear-gradient(rgba(168,85,247,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(168,85,247,0.05)_1px,transparent_1px)] bg-[size:40px_40px] "></div>
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,#050505_100%)] opacity-60"></div>
-
-            <canvas ref={canvasRef} width={800} height={400} className="w-full h-full relative z-10" />
-
-            {/* Top Left Info */}
-            <div className="absolute top-6 left-6 z-20 flex flex-col gap-1">
-              <div className="flex items-center gap-2">
-                <Activity size={16} className="text-violet-500" />
-                <span className="text-xs font-mono text-violet-400 font-bold uppercase tracking-widest">
-                  Live_Waveform_Analysis
-                </span>
-              </div>
-              <span className="text-[10px] font-mono text-gray-600">INPUT_BUFFER: SYNCED</span>
-            </div>
-
-            {/* Watermark/Status */}
-            <div className="absolute bottom-6 right-8 z-20 flex items-center gap-3">
-              <div className="text-right">
-                <p className="text-[10px] font-mono text-gray-500 uppercase">Signal_Strength</p>
-                <div className="flex gap-0.5 mt-1">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <div
-                      key={i}
-                      className={`w-3 h-1 rounded-full ${
-                        isPlaying ? "bg-violet-500 shadow-[0_0_5px_#a855f7]" : "bg-gray-800"
+          {/* Control Panel Box */}
+          <div className="bg-[#006000] border-4 border-black p-1 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+            <div className="bg-[#111] border-2 border-black p-4 space-y-6">
+              {/* Header */}
+              <div className="flex items-center justify-between border-b-2 border-[#006000] pb-2">
+                <h3 className="text-[#E07000] font-black text-sm flex items-center gap-2 uppercase">
+                  <Sliders size={16} /> SYNTH_PARAMS
+                </h3>
+                <div className="flex gap-1">
+                  {(["sine", "square", "sawtooth"] as OscillatorType[]).map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => setSettings({ ...settings, waveType: type })}
+                      className={`w-8 h-8 flex items-center justify-center border-2 transition-all ${
+                        settings.waveType === type
+                          ? "bg-[#E07000] border-black text-black"
+                          : "bg-[#222] border-gray-600 text-gray-500 hover:border-white"
                       }`}
-                    ></div>
+                      title={type}
+                    >
+                      <Waves size={14} />
+                    </button>
                   ))}
                 </div>
               </div>
-            </div>
-          </div>
 
-          {/* Secondary Metrics */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 shrink-0">
-            <div className="bg-panel-black border border-white/5 p-4 rounded-2xl flex items-center gap-4">
-              <div className="p-2 bg-blue-500/10 rounded-lg text-blue-400">
-                <Waves size={18} />
+              {/* Retro Sliders */}
+              <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                {[
+                  {
+                    label: "Attack",
+                    val: settings.attack,
+                    set: (v: number) => setSettings({ ...settings, attack: v }),
+                    min: 0.01,
+                    max: 1,
+                    step: 0.01,
+                  },
+                  {
+                    label: "Release",
+                    val: settings.release,
+                    set: (v: number) => setSettings({ ...settings, release: v }),
+                    min: 0.01,
+                    max: 2,
+                    step: 0.1,
+                  },
+                ].map((ctrl) => (
+                  <div key={ctrl.label} className="space-y-1">
+                    <div className="flex justify-between text-[9px] font-bold text-[#00FF00] uppercase">
+                      <span>{ctrl.label}</span>
+                      <span className="bg-[#006000] px-1 text-white">{ctrl.val}s</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={ctrl.min}
+                      max={ctrl.max}
+                      step={ctrl.step}
+                      value={ctrl.val}
+                      onChange={(e) => ctrl.set(Number(e.target.value))}
+                      className="w-full h-4 appearance-none bg-[#333] border-2 border-black rounded-none slider-thumb-retro"
+                      style={{ accentColor: "#E07000" }}
+                    />
+                  </div>
+                ))}
               </div>
-              <div>
-                <p className="text-[9px] font-mono text-gray-500 uppercase">Phase_Correlation</p>
-                <p className="text-sm font-mono text-white">0.982</p>
-              </div>
-            </div>
-            <div className="bg-panel-black border border-white/5 p-4 rounded-2xl flex items-center gap-4">
-              <div className="p-2 bg-pink-500/10 rounded-lg text-pink-400">
-                <Zap size={18} />
-              </div>
-              <div>
-                <p className="text-[9px] font-mono text-gray-500 uppercase">Spectral_Centroid</p>
-                <p className="text-sm font-mono text-white">1.42 kHz</p>
-              </div>
-            </div>
-            <div className="bg-panel-black border border-white/5 p-4 rounded-2xl flex items-center gap-4">
-              <div className="p-2 bg-emerald-500/10 rounded-lg text-emerald-400">
-                <Repeat size={18} />
-              </div>
-              <div>
-                <p className="text-[9px] font-mono text-gray-500 uppercase">Harmonic_Ratio</p>
-                <p className="text-sm font-mono text-white">4:1</p>
+
+              {/* Filter Knobs Simulation */}
+              <div className="space-y-4 pt-2 border-t-2 border-[#006000] border-dashed">
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[10px] font-bold text-[#E07000] uppercase">
+                    <span>Low-Pass Filter</span>
+                    <span>{settings.filterFreq}Hz</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="200"
+                    max="10000"
+                    step="100"
+                    value={settings.filterFreq}
+                    onChange={(e) => setSettings({ ...settings, filterFreq: Number(e.target.value) })}
+                    className="w-full h-4 appearance-none bg-[#333] border-2 border-black"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[10px] font-bold text-[#E07000] uppercase">
+                    <span>Feedback Delay</span>
+                    <span>{Math.floor(settings.delayFeedback * 100)}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="0.8"
+                    step="0.05"
+                    value={settings.delayFeedback}
+                    onChange={(e) => setSettings({ ...settings, delayFeedback: Number(e.target.value) })}
+                    className="w-full h-4 appearance-none bg-[#333] border-2 border-black"
+                  />
+                </div>
               </div>
             </div>
           </div>
         </div>
+
+        {/* [PANEL 2] Right: Visualization (The Main Frame) */}
+        <div className="flex-grow flex flex-col gap-4 overflow-hidden">
+          {/* Main Oscilloscope Frame */}
+          <div className="flex-grow bg-black border-4 border-black relative overflow-hidden flex items-center justify-center shadow-[8px_8px_0px_0px_#500050]">
+            {/* Corner Brackets */}
+            <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-[#E07000] z-20"></div>
+            <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-[#E07000] z-20"></div>
+
+            <canvas ref={canvasRef} width={800} height={400} className="w-full h-full relative z-10" />
+
+            {/* Onomatopoeia Effect (Behind content) */}
+            {isPlaying && (
+              <div
+                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[100px] font-black text-white opacity-10 pointer-events-none select-none rotate-12 z-0"
+                style={{ textShadow: "4px 4px 0 #000" }}
+              >
+                ZAP!
+              </div>
+            )}
+
+            {/* Top Left Info Tag */}
+            <div className="absolute top-4 left-4 z-20 bg-black border-2 border-white px-2 py-1 transform -rotate-2">
+              <div className="flex items-center gap-2">
+                <Activity size={14} className="text-[#E07000]" />
+                <span className="text-xs font-bold text-white uppercase tracking-widest">LIVE_FEED</span>
+              </div>
+            </div>
+
+            {/* Signal Strength Bars */}
+            <div className="absolute bottom-4 right-4 z-20 flex flex-col items-end">
+              <p className="text-[9px] font-bold text-[#006000] bg-black px-1 mb-1">SIGNAL</p>
+              <div className="flex gap-1">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div
+                    key={i}
+                    className={`w-2 h-6 border border-black ${isPlaying ? "bg-[#E07000]" : "bg-[#333]"}`}
+                  ></div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Secondary Metrics (Caption Boxes) */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 shrink-0">
+            {[
+              { icon: Waves, label: "Phase", val: "0.982", color: "text-blue-400" },
+              { icon: Zap, label: "Centroid", val: "1.42 kHz", color: "text-[#E07000]" },
+              { icon: Repeat, label: "Harmonic", val: "4:1", color: "text-[#00FF00]" },
+            ].map((metric, idx) => (
+              <div
+                key={idx}
+                className="bg-white border-4 border-black p-2 flex items-center gap-3 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)]"
+              >
+                <div className="bg-black p-1 text-white">
+                  <metric.icon size={16} />
+                </div>
+                <div>
+                  <p className="text-[9px] font-black text-gray-500 uppercase">{metric.label}</p>
+                  <p className="text-sm font-black text-black">{metric.val}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
+
+      {/* CSS for custom scrollbar and range inputs to match style */}
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #111; border-left: 2px solid #000; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #E07000; border: 2px solid #000; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            background: #E07000;
+            border: 2px solid black;
+            cursor: pointer;
+            margin-top: -6px;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            background: #000;
+        }
+      `}</style>
     </div>
   );
 };

@@ -1,49 +1,43 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Wind, Sprout, Leaf, ThermometerSun, Snowflake, CloudRain, Minimize2, Maximize2 } from "lucide-react";
+import { Download, PenTool, Skull, Zap, Move, Layers, PaintBucket } from "lucide-react";
 
-type Season = "spring" | "autumn" | "winter" | "cyber";
+type PaletteType = "neon" | "fire" | "ice" | "mono";
 
-interface FallingLeaf {
+interface Particle {
   x: number;
   y: number;
   vx: number;
   vy: number;
+  life: number;
+  char: string;
+  color: any; // p5 color
+  size: number;
   rotation: number;
   rotationSpeed: number;
-  text: string;
-  color: string;
-  alpha: number;
 }
 
 export const FractalGardenModule: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const p5Instance = useRef<any>(null);
 
-  // --- State & Config ---
-  const [verse] = useState("سرو چمان من چرا میل چمن نمی‌کند");
-  const [words, setWords] = useState<string[]>([]);
-  const [season, setSeason] = useState<Season>("spring");
-  const [windForce, setWindForce] = useState(0.5);
-  const [branchAngle, setBranchAngle] = useState(25);
-  const [complexity, setComplexity] = useState(9); // Recursion depth
+  // UI State
+  const [brushText, setBrushText] = useState("عشق");
+  const [brushSize, setBrushSize] = useState(24);
+  const [chaos, setChaos] = useState(2);
+  const [palette, setPalette] = useState<PaletteType>("neon");
+  const [isDrawing, setIsDrawing] = useState(false);
 
-  // Ref to access state inside P5 closure
-  const stateRef = useRef({ season, windForce, branchAngle, complexity, words });
-
+  // Refs for accessing state inside P5 closure
+  const stateRef = useRef({ brushText, brushSize, chaos, palette });
   useEffect(() => {
-    setWords(verse.split(" "));
-  }, [verse]);
+    stateRef.current = { brushText, brushSize, chaos, palette };
+  }, [brushText, brushSize, chaos, palette]);
 
-  useEffect(() => {
-    stateRef.current = { season, windForce, branchAngle, complexity, words };
-  }, [season, windForce, branchAngle, complexity, words]);
-
-  // --- Palettes ---
   const palettes = {
-    spring: { trunk: "#5d4037", leafStart: "#4caf50", leafEnd: "#aeea00", bg: "#051005" },
-    autumn: { trunk: "#3e2723", leafStart: "#ff6f00", leafEnd: "#ffca28", bg: "#1a0500" },
-    winter: { trunk: "#263238", leafStart: "#80deea", leafEnd: "#ffffff", bg: "#05151a" },
-    cyber: { trunk: "#ff00ff", leafStart: "#00ffff", leafEnd: "#39ff14", bg: "#000000" },
+    neon: ["#ff00ff", "#00ffff", "#39ff14", "#ffffff"],
+    fire: ["#ff0000", "#ff8800", "#ffff00", "#440000"],
+    ice: ["#00ffff", "#0088ff", "#ffffff", "#001133"],
+    mono: ["#ffffff", "#aaaaaa", "#555555", "#000000"],
   };
 
   useEffect(() => {
@@ -51,159 +45,78 @@ export const FractalGardenModule: React.FC = () => {
     if (!p5 || !containerRef.current) return;
 
     const sketch = (p: any) => {
-      let t = 0; // Time for noise
-      let fallingLeaves: FallingLeaf[] = [];
+      let particles: Particle[] = [];
+      let words: string[] = [];
 
       p.setup = () => {
         p.createCanvas(containerRef.current?.offsetWidth || 800, containerRef.current?.offsetHeight || 600);
-        p.textFont("Vazirmatn");
-        p.textAlign(p.CENTER, p.BASELINE);
+        p.background(5);
+        p.textFont("Courier New");
+        p.textAlign(p.CENTER, p.CENTER);
       };
 
       p.draw = () => {
-        const currentPalette = palettes[stateRef.current.season];
+        words = stateRef.current.brushText.split(" ").filter((w) => w.trim().length > 0);
+        if (words.length === 0) words = ["●"];
 
-        // Background with trail effect
-        p.noStroke();
-        p.fill(p.color(currentPalette.bg + "33")); // Hex + alpha
-        p.rect(0, 0, p.width, p.height);
+        p.blendMode(p.ADD);
+        p.background(5, 5, 5, 20);
 
-        // Calculate Wind using Perlin Noise
-        t += 0.005 * stateRef.current.windForce;
-        const noiseVal = p.noise(t);
-        const windAngle = p.map(noiseVal, 0, 1, -10, 10) * stateRef.current.windForce;
+        if (p.mouseIsPressed && p.mouseX > 0 && p.mouseX < p.width && p.mouseY > 0 && p.mouseY < p.height) {
+          setIsDrawing(true);
+          const speed = p.dist(p.mouseX, p.mouseY, p.pmouseX, p.pmouseY);
+          const spawnCount = Math.min(5, Math.ceil(speed / 2));
 
-        // Start Tree
-        p.push();
-        p.translate(p.width / 2, p.height);
-        // Initial size
-        drawBranch(120, 0, windAngle, currentPalette);
-        p.pop();
+          for (let i = 0; i < spawnCount; i++) {
+            const word = p.random(words);
+            const currentPalette = palettes[stateRef.current.palette as PaletteType];
+            const colStr = p.random(currentPalette);
 
-        // Draw Falling Leaves
-        updateFallingLeaves(currentPalette);
-
-        // Randomly spawn a falling leaf
-        if (p.random(1) < 0.02 * stateRef.current.windForce) {
-          spawnLeaf(currentPalette);
-        }
-
-        // Ground
-        drawGround(currentPalette);
-      };
-
-      const drawBranch = (len: number, level: number, wind: number, palette: any) => {
-        const { words, complexity, branchAngle } = stateRef.current;
-
-        // Color Gradient based on level
-        const inter = p.map(level, 0, complexity, 0, 1);
-        const c = p.lerpColor(p.color(palette.trunk), p.color(palette.leafEnd), inter);
-
-        p.fill(c);
-        p.noStroke();
-
-        // Select word based on level
-        const word = words[level % words.length] || "●";
-
-        // Text Size scales with branch length
-        p.textSize(Math.max(8, len * 0.15));
-
-        // Draw the segment (Text represents the branch)
-        p.push();
-        p.rotate(p.radians(-90)); // Draw upwards
-        p.text(word, 0, -len / 2); // Draw text centered on the branch line
-        p.pop();
-
-        // Move to end of branch
-        p.translate(0, -len);
-
-        // Recursion
-        if (len > 10 && level < complexity) {
-          // Wind affects rotation
-          const angleRad = p.radians(branchAngle + wind);
-
-          // Right Branch
-          p.push();
-          p.rotate(angleRad);
-          drawBranch(len * 0.7, level + 1, wind * 1.2, palette);
-          p.pop();
-
-          // Left Branch
-          p.push();
-          p.rotate(-angleRad + wind * 0.5); // Asymmetric wind
-          drawBranch(len * 0.7, level + 1, wind * 1.2, palette);
-          p.pop();
-
-          // Occasional Middle Branch for density
-          if (level > 2 && level < 6) {
-            p.push();
-            p.rotate(wind * 0.2);
-            drawBranch(len * 0.6, level + 1, wind, palette);
-            p.pop();
+            particles.push({
+              x: p.mouseX + p.random(-stateRef.current.chaos * 5, stateRef.current.chaos * 5),
+              y: p.mouseY + p.random(-stateRef.current.chaos * 5, stateRef.current.chaos * 5),
+              vx: (p.mouseX - p.pmouseX) * 0.1 + p.random(-2, 2),
+              vy: (p.mouseY - p.pmouseY) * 0.1 + p.random(-2, 2),
+              life: 255,
+              char: word,
+              color: p.color(colStr),
+              size: stateRef.current.brushSize * p.random(0.5, 1.5),
+              rotation: p.random(p.TWO_PI),
+              rotationSpeed: p.random(-0.1, 0.1),
+            });
           }
+        } else {
+          setIsDrawing(false);
         }
-      };
 
-      const spawnLeaf = (palette: any) => {
-        const w = stateRef.current.words;
-        fallingLeaves.push({
-          x: p.random(p.width),
-          y: -50,
-          vx: p.random(-1, 1) + (p.noise(t) - 0.5) * 5, // Wind effect
-          vy: p.random(1, 3),
-          rotation: p.random(p.TWO_PI),
-          rotationSpeed: p.random(-0.1, 0.1),
-          text: w[Math.floor(p.random(w.length))],
-          color: palette.leafEnd,
-          alpha: 255,
-        });
-      };
-
-      const updateFallingLeaves = (palette: any) => {
-        for (let i = fallingLeaves.length - 1; i >= 0; i--) {
-          let l = fallingLeaves[i];
-          l.x += l.vx;
-          l.y += l.vy;
-          l.rotation += l.rotationSpeed;
-          l.alpha -= 0.5;
-
-          // Wind influence on falling leaves
-          l.x += (p.noise(t, l.y * 0.01) - 0.5) * stateRef.current.windForce * 2;
+        for (let i = particles.length - 1; i >= 0; i--) {
+          let pt = particles[i];
+          pt.x += pt.vx;
+          pt.y += pt.vy;
+          pt.vx *= 0.95;
+          pt.vy *= 0.95;
+          pt.rotation += pt.rotationSpeed;
+          pt.life -= 2;
+          pt.color.setAlpha(pt.life);
 
           p.push();
-          p.translate(l.x, l.y);
-          p.rotate(l.rotation);
-          p.fill(p.color(l.color));
-          const c = p.color(l.color);
-          c.setAlpha(l.alpha);
-          p.fill(c);
-          p.textSize(12);
-          p.text(l.text, 0, 0);
+          p.translate(pt.x, pt.y);
+          p.rotate(pt.rotation);
+          p.fill(pt.color);
+          p.noStroke();
+          p.textSize(pt.size);
+          p.text(pt.char, 0, 0);
           p.pop();
 
-          if (l.y > p.height || l.alpha <= 0) {
-            fallingLeaves.splice(i, 1);
-          }
+          if (pt.life <= 0) particles.splice(i, 1);
         }
-      };
-
-      const drawGround = (palette: any) => {
-        // Simple gradient ground
-        const c = p.color(palette.trunk);
-        c.setAlpha(50);
-        p.fill(c);
-        p.rect(0, p.height - 20, p.width, 20);
-
-        // Quote
-        p.fill(200);
-        p.textSize(12);
-        p.textAlign(p.LEFT);
-        p.text("حافظ: سرو چمان من چرا میل چمن نمی‌کند", 20, p.height - 10);
+        p.blendMode(p.BLEND);
       };
 
       p.windowResized = () => {
         if (containerRef.current) {
           p.resizeCanvas(containerRef.current.offsetWidth, containerRef.current.offsetHeight);
+          p.background(5);
         }
       };
     };
@@ -211,103 +124,253 @@ export const FractalGardenModule: React.FC = () => {
     p5Instance.current = new p5(sketch, containerRef.current);
 
     return () => {
-      if (p5Instance.current) p5Instance.current.remove();
+      if (p5Instance.current) {
+        p5Instance.current.remove();
+      }
     };
   }, []);
 
+  const clearCanvas = () => {
+    if (p5Instance.current) {
+      p5Instance.current.background(5);
+    }
+  };
+
+  const downloadCanvas = () => {
+    if (p5Instance.current) {
+      p5Instance.current.saveCanvas("comix_zone_art", "png");
+    }
+  };
+
   return (
-    <div className="h-full flex flex-col relative bg-[#050505] overflow-hidden group">
-      <div ref={containerRef} className="w-full h-full cursor-crosshair touch-none" />
+    // --- SYSTEM KERNEL: SEGA GENESIS VDP EMULATION ---
+    // BACKGROUND: The "Void" (Artist's Desk) - Bruised Purple #500050
+    <div className="h-full w-full flex flex-col lg:flex-row bg-[#2a0a2a] relative overflow-hidden font-mono p-2 md:p-6 gap-6 select-none">
+      {/* DECORATIVE: Background Elements (Scattered Artist Tools) */}
+      <div
+        className="absolute inset-0 opacity-10 pointer-events-none"
+        style={{
+          backgroundImage: "radial-gradient(#500050 2px, transparent 2px)",
+          backgroundSize: "20px 20px",
+        }}
+      ></div>
+      <div className="absolute top-[-5%] left-[-5%] text-[#400040] font-black text-[200px] opacity-20 rotate-12 pointer-events-none">
+        SEGA
+      </div>
 
-      {/* HUD */}
-      <div className="absolute top-4 right-4 left-4 md:left-auto md:w-80 z-20 flex flex-col gap-3 ">
-        <div className="bg-black/70 backdrop-blur-md border border-lime-500/30 rounded-lg p-4 shadow-2xl pointer-events-auto">
-          <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-3">
-            <h3 className="text-lime-400 font-display text-sm flex items-center gap-2">
-              <Sprout size={16} /> سرو سخنگو
-            </h3>
-            <span className="font-mono text-[10px] text-gray-500">HAFEZ_L-SYSTEM_V4</span>
+      {/* --- LEFT PANEL: THE CANVAS (COMIC PAGE) --- */}
+      <div className="flex-grow relative z-10 order-2 lg:order-1 flex flex-col">
+        {/* Page Header (Episode Title) */}
+        <div className="mb-2 flex items-center gap-2">
+          <div className="bg-[#FFCC00] px-3 py-1 border-2 border-black shadow-[2px_2px_0px_#000]">
+            <span className="text-black font-black text-xs tracking-widest">
+              EPISODE 1: NIGHT OF THE MUTANTS
+            </span>
+          </div>
+          <div className="h-1 flex-grow bg-black"></div>
+        </div>
+
+        {/* The "Paper" Container */}
+        <div className="flex-grow relative p-1 bg-white border-4 border-black shadow-[8px_8px_0px_rgba(0,0,0,0.6)] transform -rotate-1 transition-transform duration-300 hover:rotate-0">
+          {/* The "Gutter" (Safe Zone) */}
+          <div className="absolute top-0 left-0 w-full h-full border-[16px] border-white pointer-events-none z-20"></div>
+
+          {/* Inner Ink Border */}
+          <div className="w-full h-full border-4 border-black bg-[#050505] relative overflow-hidden">
+            {/* P5 Canvas Target */}
+            <div ref={containerRef} className="w-full h-full cursor-crosshair touch-none" />
+
+            {/* "Mortus Hand" Hint Overlay */}
+            {!isDrawing && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                <div className="bg-black/80 border-2 border-[#E07000] p-4 transform rotate-3">
+                  <h2 className="text-[#E07000] text-2xl font-black animate-pulse tracking-widest drop-shadow-[2px_2px_0px_#fff]">
+                    DRAW TO ATTACK!
+                  </h2>
+                </div>
+              </div>
+            )}
+
+            {/* Page Number Corner */}
+            <div className="absolute bottom-2 right-2 bg-white border-2 border-black px-2 z-30 transform rotate-[-5deg]">
+              <span className="text-black font-bold text-xs">1/1</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* --- RIGHT PANEL: THE INVENTORY (CONTROLS) --- */}
+      <div className="w-full lg:w-96 flex flex-col gap-5 z-20 order-1 lg:order-2">
+        {/* SECTION: NARRATOR BOX (Header) */}
+        <div className="bg-[#FFCC00] border-4 border-black p-4 shadow-[6px_6px_0px_#000] relative">
+          <div className="absolute -top-3 -left-3 bg-black text-white px-2 py-1 text-xs font-bold transform -rotate-6 border border-[#FFCC00]">
+            SKETCH_TURNER
+          </div>
+          <h3 className="text-black font-black text-xl uppercase tracking-tighter flex items-center gap-2 border-b-4 border-black pb-2 mb-2">
+            <PenTool className="w-6 h-6" />
+            ARTIST TOOLS
+          </h3>
+          <p className="text-xs font-bold text-black leading-tight uppercase">
+            "Choose your weapon. The mutants won't wait for the ink to dry."
+          </p>
+        </div>
+
+        {/* SECTION: CONTROL PANEL */}
+        <div className="bg-[#1a1a1a] border-4 border-[#555] p-4 shadow-[6px_6px_0px_#000] flex flex-col gap-6">
+          {/* 1. TEXT INPUT (Speech Bubble Style) */}
+          <div className="relative group">
+            <label className="text-[#E07000] text-xs font-black uppercase mb-1 block tracking-widest">
+              Dialogue Input
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                value={brushText}
+                onChange={(e) => setBrushText(e.target.value)}
+                className="w-full bg-white border-4 border-black p-3 text-black font-black text-lg outline-none focus:shadow-[inset_0_0_0_4px_#E07000] transition-all clip-path-polygon"
+                dir="rtl"
+              />
+              {/* Speech Bubble Tail */}
+              <div className="absolute -bottom-3 right-6 w-4 h-4 bg-white border-r-4 border-b-4 border-black transform rotate-45"></div>
+            </div>
           </div>
 
-          {/* Season Selector */}
-          <div className="flex justify-between gap-1 mb-4 bg-black/40 p-1 rounded-lg">
-            {[
-              { id: "spring", icon: Leaf, color: "text-green-400" },
-              { id: "autumn", icon: Wind, color: "text-orange-400" },
-              { id: "winter", icon: Snowflake, color: "text-cyan-400" },
-              { id: "cyber", icon: Maximize2, color: "text-magenta-400" },
-            ].map((s) => (
-              <button
-                key={s.id}
-                onClick={() => setSeason(s.id as Season)}
-                className={`flex-1 flex items-center justify-center p-2 rounded transition-all ${
-                  season === s.id
-                    ? "bg-white/10 shadow shadow-white/5 " + s.color
-                    : "text-gray-600 hover:text-gray-400"
-                }`}
-                title={s.id.toUpperCase()}
-              >
-                <s.icon size={16} />
-              </button>
-            ))}
-          </div>
-
-          {/* Sliders */}
+          {/* 2. SLIDERS (Power Bars) */}
           <div className="space-y-4">
+            {/* Brush Size */}
             <div>
-              <div className="flex justify-between text-[10px] font-mono text-gray-400 mb-1">
+              <div className="flex justify-between text-xs font-black mb-1 text-[#00ff00]">
                 <span className="flex items-center gap-1">
-                  <Wind size={10} /> WIND_FORCE
+                  <Move size={12} /> BRUSH_SIZE
                 </span>
-                <span>{(windForce * 100).toFixed(0)}%</span>
+                <span className="bg-[#006000] text-white px-1">{brushSize}PX</span>
               </div>
-              <input
-                type="range"
-                min="0"
-                max="3"
-                step="0.1"
-                value={windForce}
-                onChange={(e) => setWindForce(Number(e.target.value))}
-                className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-lime-500"
-              />
+              <div className="h-4 bg-black border-2 border-[#555] relative">
+                <input
+                  type="range"
+                  min="10"
+                  max="100"
+                  value={brushSize}
+                  onChange={(e) => setBrushSize(Number(e.target.value))}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                />
+                <div
+                  className="h-full bg-[#00ff00] border-r-2 border-white"
+                  style={{ width: `${brushSize}%` }}
+                ></div>
+                {/* Grid lines for retro feel */}
+                <div className="absolute inset-0 bg-[url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAIklEQVQIW2NkQAKrVq36zwjjgzhhYWGMYAEYB8RmROaABADeOQ8CXl/xfgAAAABJRU5ErkJggg==')] opacity-30 pointer-events-none"></div>
+              </div>
             </div>
 
+            {/* Chaos Level */}
             <div>
-              <div className="flex justify-between text-[10px] font-mono text-gray-400 mb-1">
+              <div className="flex justify-between text-xs font-black mb-1 text-[#ff00ff]">
                 <span className="flex items-center gap-1">
-                  <Minimize2 size={10} /> BRANCH_ANGLE
+                  <Zap size={12} /> CHAOS_LEVEL
                 </span>
-                <span>{branchAngle}°</span>
+                <span className="bg-[#500050] text-white px-1">{Math.floor(chaos * 10)}%</span>
               </div>
-              <input
-                type="range"
-                min="5"
-                max="60"
-                step="1"
-                value={branchAngle}
-                onChange={(e) => setBranchAngle(Number(e.target.value))}
-                className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-lime-500"
-              />
-            </div>
-
-            <div>
-              <div className="flex justify-between text-[10px] font-mono text-gray-400 mb-1">
-                <span className="flex items-center gap-1">
-                  <Maximize2 size={10} /> COMPLEXITY
-                </span>
-                <span>{complexity}</span>
+              <div className="h-4 bg-black border-2 border-[#555] relative">
+                <input
+                  type="range"
+                  min="0"
+                  max="10"
+                  step="0.5"
+                  value={chaos}
+                  onChange={(e) => setChaos(Number(e.target.value))}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                />
+                <div
+                  className="h-full bg-[#ff00ff] border-r-2 border-white"
+                  style={{ width: `${chaos * 10}%` }}
+                ></div>
+                <div className="absolute inset-0 bg-[url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAIklEQVQIW2NkQAKrVq36zwjjgzhhYWGMYAEYB8RmROaABADeOQ8CXl/xfgAAAABJRU5ErkJggg==')] opacity-30 pointer-events-none"></div>
               </div>
-              <input
-                type="range"
-                min="5"
-                max="11"
-                step="1"
-                value={complexity}
-                onChange={(e) => setComplexity(Number(e.target.value))}
-                className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-lime-500"
-              />
             </div>
           </div>
+
+          {/* 3. PALETTE (Mutagen Vials) */}
+          <div>
+            <label className="text-[#E07000] text-xs font-black uppercase mb-2 block tracking-widest flex items-center gap-2">
+              <PaintBucket size={14} /> Ink Type
+            </label>
+            <div className="grid grid-cols-4 gap-2 bg-black p-2 border-2 border-[#333]">
+              {Object.keys(palettes).map((key) => (
+                <button
+                  key={key}
+                  onClick={() => setPalette(key as PaletteType)}
+                  className={`h-12 relative group transition-all ${
+                    palette === key ? "ring-2 ring-white z-10" : "opacity-60 hover:opacity-100"
+                  }`}
+                >
+                  {/* Vial Liquid */}
+                  <div
+                    className={`absolute inset-1 border border-black ${
+                      key === "neon"
+                        ? "bg-gradient-to-t from-[#ff00ff] to-[#00ffff]"
+                        : key === "fire"
+                        ? "bg-gradient-to-t from-[#440000] to-[#ffff00]"
+                        : key === "ice"
+                        ? "bg-gradient-to-t from-[#001133] to-[#00ffff]"
+                        : "bg-gradient-to-t from-[#000] to-[#fff]"
+                    }`}
+                  ></div>
+
+                  {/* Glass Reflection */}
+                  <div className="absolute top-2 right-2 w-1 h-4 bg-white opacity-40"></div>
+
+                  {/* Active Indicator */}
+                  {palette === key && (
+                    <div className="absolute -bottom-2 -right-2 bg-[#E07000] text-black text-[8px] font-bold px-1 border border-black">
+                      EQP
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* SECTION: INVENTORY SLOTS (Actions) */}
+        <div className="grid grid-cols-2 gap-4">
+          {/* SLOT 1: WIPE (Dynamite) */}
+          <button
+            onClick={clearCanvas}
+            className="group relative h-20 bg-[#111] border-4 border-[#FFCC00] shadow-[4px_4px_0px_#000] active:translate-y-1 active:shadow-none transition-all flex flex-col items-center justify-center overflow-hidden"
+          >
+            <div className="absolute top-0 left-0 bg-[#FFCC00] text-black text-[10px] font-bold px-1">
+              ITEM_1
+            </div>
+            <Skull
+              className="text-red-600 w-8 h-8 mb-1 group-hover:scale-110 transition-transform"
+              strokeWidth={2.5}
+            />
+            <span className="text-[#FFCC00] text-xs font-black uppercase tracking-widest group-hover:text-white">
+              WIPE
+            </span>
+            {/* Hover Effect */}
+            <div className="absolute inset-0 bg-red-500 opacity-0 group-hover:opacity-10 transition-opacity"></div>
+          </button>
+
+          {/* SLOT 2: SAVE (Disk) */}
+          <button
+            onClick={downloadCanvas}
+            className="group relative h-20 bg-[#111] border-4 border-[#FFCC00] shadow-[4px_4px_0px_#000] active:translate-y-1 active:shadow-none transition-all flex flex-col items-center justify-center overflow-hidden"
+          >
+            <div className="absolute top-0 left-0 bg-[#FFCC00] text-black text-[10px] font-bold px-1">
+              ITEM_2
+            </div>
+            <Download
+              className="text-cyan-400 w-8 h-8 mb-1 group-hover:scale-110 transition-transform"
+              strokeWidth={2.5}
+            />
+            <span className="text-[#FFCC00] text-xs font-black uppercase tracking-widest group-hover:text-white">
+              SAVE
+            </span>
+            {/* Hover Effect */}
+            <div className="absolute inset-0 bg-cyan-500 opacity-0 group-hover:opacity-10 transition-opacity"></div>
+          </button>
         </div>
       </div>
     </div>

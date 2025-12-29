@@ -5,14 +5,25 @@ import {
   Activity,
   Zap,
   RefreshCw,
-  Wind,
-  Sliders,
   Play,
   Trash2,
   Binary,
   Heart,
+  Skull,
+  Edit3,
 } from "lucide-react";
 import { mutateWords } from "../../../services/geminiService";
+
+// --- COMIX ZONE PALETTE ---
+const PALETTE = {
+  MUTANT_ORANGE: "#E07000",
+  SEWER_SLUDGE: "#006000",
+  BRUISED_PURPLE: "#500050",
+  SKETCH_WHITE: "#FFFFFF",
+  INK_BLACK: "#000000",
+  NARRATOR_YELLOW: "#FFCC00",
+  VOID_DARK: "#1a051a",
+};
 
 interface Organism {
   id: number;
@@ -76,9 +87,18 @@ export const BioSynthesisModule: React.FC = () => {
     canvasRef.current.width = w;
     canvasRef.current.height = h;
 
-    // Dark background with slight fade for trails
-    ctx.fillStyle = "rgba(2, 4, 8, 0.2)";
+    // 1. Background: The "Paper" Texture inside the panel
+    // Instead of clear fade, we use a gritty comic background color
+    ctx.fillStyle = PALETTE.BRUISED_PURPLE; // Dark purple background
     ctx.fillRect(0, 0, w, h);
+
+    // Add Halftone pattern effect (simulated with dots)
+    ctx.fillStyle = "rgba(0,0,0,0.2)";
+    for (let dx = 0; dx < w; dx += 4) {
+      for (let dy = 0; dy < h; dy += 4) {
+        if ((dx + dy) % 8 === 0) ctx.fillRect(dx, dy, 1, 1);
+      }
+    }
 
     const currentOrgs = orgsRef.current;
 
@@ -95,16 +115,15 @@ export const BioSynthesisModule: React.FC = () => {
 
       // 2. Lifecycle
       org.age += 0.1;
-      org.energy -= 0.05; // Base metabolism
+      org.energy -= 0.05;
 
-      // 3. Interactions (Breeding/Mutation)
+      // 3. Interactions
       for (let j = i + 1; j < currentOrgs.length; j++) {
         const other = currentOrgs[j];
         const dx = other.x - org.x;
         const dy = other.y - org.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
-        // Semantic Gravity: Attraction
         if (dist < 200) {
           const force = semanticGravity * 0.01;
           org.vx += (dx / dist) * force;
@@ -113,39 +132,56 @@ export const BioSynthesisModule: React.FC = () => {
           other.vy -= (dy / dist) * force;
         }
 
-        // Collision -> Potential Mutation
         if (dist < 40 && !org.isMutating && !other.isMutating && Math.random() < mutationRate * 0.1) {
           handleBreeding(org, other);
         }
       }
 
-      // 4. Drawing
+      // 4. Drawing (COMIC STYLE)
       ctx.save();
       ctx.translate(org.x, org.y);
 
-      // Bioluminescent Glow
-      const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, org.size * 1.5);
-      gradient.addColorStop(0, `hsla(${org.hue}, 100%, 70%, ${org.energy / 100})`);
-      gradient.addColorStop(1, `hsla(${org.hue}, 100%, 50%, 0)`);
-
-      ctx.fillStyle = gradient;
+      // Shape: Hard Ink Outline instead of Glow
       ctx.beginPath();
-      ctx.arc(0, 0, org.size * 1.5, 0, Math.PI * 2);
+      // Rough circle (jittery)
+      const jitter = Math.random() * 2;
+      ctx.arc(0, 0, org.size * 1.2 + jitter, 0, Math.PI * 2);
+
+      // Fill Color based on energy (16-bit palette)
+      if (org.isMutating) {
+        ctx.fillStyle = PALETTE.SKETCH_WHITE;
+      } else if (org.energy > 50) {
+        ctx.fillStyle = PALETTE.MUTANT_ORANGE;
+      } else {
+        ctx.fillStyle = PALETTE.SEWER_SLUDGE;
+      }
       ctx.fill();
 
-      // Text Label
-      ctx.fillStyle = "#fff";
-      ctx.font = `bold ${org.size}px "Vazirmatn"`;
+      // Thick Ink Border
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = PALETTE.INK_BLACK;
+      ctx.stroke();
+
+      // Text Label (Comic Font Style)
+      ctx.fillStyle = PALETTE.INK_BLACK;
+      // Using a monospace font to simulate typewriter/pixel font
+      ctx.font = `bold ${org.size}px "Courier New", monospace`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.shadowColor = `hsla(${org.hue}, 100%, 50%, 1)`;
-      ctx.shadowBlur = 10;
+
+      // White "Speech Bubble" background for text readability
+      const textWidth = ctx.measureText(org.text).width;
+      ctx.fillStyle = PALETTE.SKETCH_WHITE;
+      ctx.fillRect(-textWidth / 2 - 4, -org.size / 2 - 4, textWidth + 8, org.size + 8);
+      ctx.strokeRect(-textWidth / 2 - 4, -org.size / 2 - 4, textWidth + 8, org.size + 8);
+
+      ctx.fillStyle = PALETTE.INK_BLACK;
       ctx.fillText(org.text, 0, 0);
 
       ctx.restore();
     }
 
-    // Cleanup dead organisms
+    // Cleanup
     orgsRef.current = currentOrgs.filter((o) => o.energy > 0);
     setPopulation(orgsRef.current.length);
 
@@ -162,10 +198,8 @@ export const BioSynthesisModule: React.FC = () => {
 
     const mutationResult = await mutateWords(parentA.text, parentB.text);
 
-    // Spawn offspring
     spawnOrganism(mutationResult, (parentA.x + parentB.x) / 2, (parentA.y + parentB.y) / 2);
 
-    // Energy penalty for breeding
     parentA.energy -= 20;
     parentB.energy -= 20;
     parentA.isMutating = false;
@@ -178,36 +212,38 @@ export const BioSynthesisModule: React.FC = () => {
     return () => cancelAnimationFrame(requestRef.current);
   }, [update]);
 
-  // Initial Population
   useEffect(() => {
     const seeds = ["ماه", "ستاره", "خاک", "آب", "باد"];
     seeds.forEach((s) => spawnOrganism(s));
   }, []);
 
   return (
-    <div className="h-full flex flex-col lg:flex-row bg-[#010204] overflow-hidden">
-      {/* Control HUD Sidebar */}
-      <div className="w-full lg:w-80 p-6 flex flex-col gap-6 border-l border-white/10 z-20 bg-panel-black/90 backdrop-blur-xl shrink-0 overflow-y-auto custom-scrollbar">
-        <div className="flex items-center gap-3 border-b border-white/10 pb-4">
-          <div className="p-2 bg-lime-500/20 rounded-lg text-lime-400">
-            <Microscope size={24} />
+    // MAIN CONTAINER: The "Artist's Desk" (Void Background)
+    <div className="h-full flex flex-col lg:flex-row bg-[#1a1a1a] overflow-hidden font-mono relative">
+      {/* SCATTERED PENCILS (DECORATIVE) */}
+      <div className="absolute top-[-20px] left-[100px] w-4 h-32 bg-yellow-600 rotate-12 shadow-xl z-0 border-2 border-black"></div>
+      <div className="absolute bottom-[-10px] right-[50px] w-64 h-4 bg-red-700 -rotate-6 shadow-xl z-0 border-2 border-black"></div>
+
+      {/* SIDEBAR: The "Script & Inventory" Area */}
+      <div className="w-full lg:w-80 p-4 flex flex-col gap-6 z-20 shrink-0 overflow-y-auto custom-scrollbar relative">
+        {/* HEADER: Narrator Box Style */}
+        <div className="bg-[#FFCC00] border-4 border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transform -rotate-1">
+          <div className="flex items-center gap-3 border-b-2 border-black pb-2 mb-2">
+            <Microscope size={24} className="text-black" />
+            <h2 className="text-black font-black text-xl uppercase tracking-tighter">MUTANT LAB</h2>
           </div>
-          <div>
-            <h2 className="text-white font-display text-xl tracking-tight">سنتز زیست-زبانی</h2>
-            <p className="text-[9px] font-mono text-gray-500 uppercase tracking-widest">
-              Bio_Linguistic_Lab_v1.0
-            </p>
-          </div>
+          <p className="text-xs font-bold text-black uppercase">EPISODE 1: GENESIS</p>
         </div>
 
-        {/* Simulation Parameters */}
-        <div className="space-y-6">
+        {/* CONTROLS: Comic Panel Style */}
+        <div className="bg-white border-4 border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] space-y-6">
+          {/* Mutation Rate Slider */}
           <div>
-            <div className="flex justify-between text-[10px] font-mono text-gray-400 mb-2 uppercase">
+            <div className="flex justify-between text-xs font-bold text-black mb-1 uppercase">
               <span className="flex items-center gap-1">
-                <Dna size={10} /> Mutation_Rate
+                <Dna size={12} /> MUTATION
               </span>
-              <span className="text-lime-400">{(mutationRate * 100).toFixed(0)}%</span>
+              <span className="bg-black text-white px-1">{(mutationRate * 100).toFixed(0)}%</span>
             </div>
             <input
               type="range"
@@ -216,16 +252,17 @@ export const BioSynthesisModule: React.FC = () => {
               step="0.05"
               value={mutationRate}
               onChange={(e) => setMutationRate(Number(e.target.value))}
-              className="w-full h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-lime-500"
+              className="w-full h-4 bg-gray-300 border-2 border-black appearance-none cursor-pointer accent-[#E07000]"
             />
           </div>
 
+          {/* Gravity Slider */}
           <div>
-            <div className="flex justify-between text-[10px] font-mono text-gray-400 mb-2 uppercase">
+            <div className="flex justify-between text-xs font-bold text-black mb-1 uppercase">
               <span className="flex items-center gap-1">
-                <Binary size={10} /> Semantic_Gravity
+                <Binary size={12} /> GRAVITY
               </span>
-              <span className="text-blue-400">{(semanticGravity * 100).toFixed(0)}ρ</span>
+              <span className="bg-black text-white px-1">{(semanticGravity * 100).toFixed(0)}ρ</span>
             </div>
             <input
               type="range"
@@ -234,31 +271,34 @@ export const BioSynthesisModule: React.FC = () => {
               step="0.1"
               value={semanticGravity}
               onChange={(e) => setSemanticGravity(Number(e.target.value))}
-              className="w-full h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
+              className="w-full h-4 bg-gray-300 border-2 border-black appearance-none cursor-pointer accent-[#006000]"
             />
           </div>
 
-          <div className="bg-black/40 border border-white/5 rounded-xl p-4 flex flex-col gap-3">
+          {/* Stats Box */}
+          <div className="border-2 border-black bg-gray-100 p-2 flex flex-col gap-1 font-mono text-xs">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-mono text-gray-500">POPULATION_NODES</span>
-              <span className="text-xs text-lime-500 font-bold">{population}</span>
+              <span className="text-black font-bold">NODES:</span>
+              <span className="text-[#E07000] font-black text-lg">{population}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-mono text-gray-500">CORE_SYNC</span>
-              <span className="text-[10px] text-green-500 animate-pulse font-mono">ACTIVE</span>
+              <span className="text-black font-bold">STATUS:</span>
+              <span className="text-[#006000] font-black animate-pulse">LIVE</span>
             </div>
           </div>
 
-          {/* Inject Seed */}
-          <div className="space-y-2">
-            <label className="text-[10px] font-mono text-gray-500 uppercase">Inject_Linguistic_Seed</label>
-            <div className="flex gap-2">
+          {/* INJECT SEED: Speech Bubble Input */}
+          <div className="space-y-2 relative">
+            <label className="text-xs font-black text-black uppercase bg-[#FFCC00] px-1 inline-block border border-black">
+              NEW WORD
+            </label>
+            <div className="flex gap-0">
               <input
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
-                className="flex-grow bg-white/5 border border-white/10 p-2 text-xs text-white rounded outline-none focus:border-lime-500 transition-all"
+                className="flex-grow bg-white border-2 border-black p-2 text-sm text-black font-bold outline-none focus:bg-yellow-50 transition-all placeholder:text-gray-400"
                 dir="rtl"
-                placeholder="کلمه پایه..."
+                placeholder="کلمه..."
               />
               <button
                 onClick={() => {
@@ -267,71 +307,83 @@ export const BioSynthesisModule: React.FC = () => {
                     setInputText("");
                   }
                 }}
-                className="p-2 bg-lime-600 hover:bg-lime-500 text-black rounded transition-all shadow-[0_0_10px_rgba(132,204,22,0.3)]"
+                className="p-2 bg-[#E07000] border-2 border-l-0 border-black text-black hover:bg-[#FFCC00] transition-colors"
               >
-                <Zap size={14} />
+                <Zap size={20} strokeWidth={3} />
               </button>
             </div>
           </div>
         </div>
 
-        <div className="mt-auto space-y-2">
+        {/* INVENTORY SLOTS (Action Buttons) */}
+        <div className="mt-auto grid grid-cols-2 gap-4">
+          {/* Slot 1: Toggle Sim */}
           <button
             onClick={() => setIsSimulating(!isSimulating)}
-            className={`w-full py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
-              isSimulating
-                ? "bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20"
-                : "bg-green-500/10 border border-green-500/20 text-green-400 hover:bg-green-500/20"
+            className={`aspect-square border-4 border-black flex flex-col items-center justify-center gap-1 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all ${
+              isSimulating ? "bg-[#FFCC00]" : "bg-gray-400"
             }`}
           >
-            {isSimulating ? <Trash2 size={16} /> : <Play size={16} />}
-            {isSimulating ? "توقف آزمایش" : "ادامه شبیه‌سازی"}
+            {isSimulating ? <Trash2 size={24} strokeWidth={3} /> : <Play size={24} strokeWidth={3} />}
+            <span className="text-[10px] font-black uppercase bg-black text-white px-1">
+              {isSimulating ? "STOP" : "PLAY"}
+            </span>
           </button>
+
+          {/* Slot 2: Clear */}
           <button
             onClick={() => {
               orgsRef.current = [];
               setPopulation(0);
             }}
-            className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2"
+            className="aspect-square bg-[#E07000] border-4 border-black flex flex-col items-center justify-center gap-1 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all hover:bg-red-500"
           >
-            <RefreshCw size={16} /> پاکسازی محفظه
+            <Skull size={24} strokeWidth={3} />
+            <span className="text-[10px] font-black uppercase bg-black text-white px-1">NUKE</span>
           </button>
         </div>
       </div>
 
-      {/* Microscopic Viewport */}
-      <div ref={containerRef} className="flex-grow relative overflow-hidden bg-[#000408]">
-        {/* Visual Glass Overlay */}
-        <div className="absolute inset-0 z-10  border-[40px] border-black opacity-40 rounded-[50%] scale-[1.2]"></div>
-        <div className="absolute inset-0 z-10  shadow-[inset_0_0_150px_rgba(0,0,0,1)]"></div>
+      {/* MAIN PANEL: The Comic Frame */}
+      <div className="flex-grow relative p-6 flex flex-col">
+        {/* The "Gutter" (White Space) is handled by padding, 
+            The Container below is the actual Panel */}
+        <div
+          ref={containerRef}
+          className="flex-grow relative border-[6px] border-black bg-[#500050] shadow-[10px_10px_0px_0px_rgba(0,0,0,0.5)] overflow-hidden"
+        >
+          {/* COMIC TEXTURE OVERLAY */}
+          <div className="absolute inset-0  opacity-10 bg-[url('https://www.transparenttextures.com/patterns/paper.png')]"></div>
 
-        {/* Floating Dust Particles */}
-        <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_center,_rgba(0,255,255,0.02)_1px,transparent_1px)] [background-size:30px_30px]"></div>
+          <canvas ref={canvasRef} className="w-full h-full block relative z-10" />
 
-        <canvas ref={canvasRef} className="w-full h-full block" />
-
-        {/* HUD Overlays */}
-        <div className="absolute top-6 left-6  flex flex-col gap-3">
-          <div className="bg-black/60 backdrop-blur px-3 py-1 rounded border border-white/10 text-[9px] font-mono text-gray-500 flex items-center gap-2">
-            <Activity size={10} className="text-lime-500" />
-            ENV_STABILITY: 94%
+          {/* HUD: Floating Text inside Panel */}
+          <div className="absolute top-4 left-4 z-20 flex flex-col gap-2">
+            <div className="bg-white border-2 border-black px-2 py-1 text-xs font-black text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transform -rotate-2">
+              <Activity size={12} className="inline mr-1" />
+              STABILITY: 94%
+            </div>
+            <div className="bg-white border-2 border-black px-2 py-1 text-xs font-black text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transform rotate-1">
+              <Heart size={12} className="inline mr-1 text-red-600 fill-red-600" />
+              SYNC: OK
+            </div>
           </div>
-          <div className="bg-black/60 backdrop-blur px-3 py-1 rounded border border-white/10 text-[9px] font-mono text-gray-500 flex items-center gap-2">
-            <Heart size={10} className="text-red-500 animate-pulse" />
-            ORGANIC_FLOW: SYNCED
-          </div>
+
+          {/* EMPTY STATE: Dramatic Text */}
+          {population === 0 && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center z-0 ">
+              <Edit3 size={60} className="mb-4 text-[#E07000] animate-bounce" strokeWidth={3} />
+              <h3 className="font-black text-4xl text-white tracking-tighter drop-shadow-[4px_4px_0px_#000]">
+                THE PAGE IS BLANK!
+              </h3>
+              <div className="bg-white border-2 border-black p-2 mt-2 transform rotate-2">
+                <p className="font-mono text-sm font-bold text-black uppercase">
+                  Use the inventory to spawn mutants.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
-
-        {/* Intro Instructions */}
-        {population === 0 && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-center opacity-20 ">
-            <Dna size={80} className="mb-4 stroke-[1px] animate-pulse text-lime-500" />
-            <h3 className="font-display text-3xl text-white">در انتظار حیات</h3>
-            <p className="font-mono text-xs max-w-sm uppercase tracking-widest">
-              Inject linguistic seeds to begin the bio-synthesis evolution process.
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );

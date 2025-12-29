@@ -9,6 +9,9 @@ import {
   Monitor,
   Sliders,
   Eye,
+  Zap,
+  Skull,
+  Hand,
 } from "lucide-react";
 
 interface GlitchSettings {
@@ -25,7 +28,7 @@ export const PixelGlitchModule: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [img, setImg] = useState<HTMLImageElement | null>(null);
-  const [status, setStatus] = useState("SYSTEM_IDLE // WAITING_FOR_INPUT");
+  const [status, setStatus] = useState("READY PLAYER ONE...");
   const [isDragging, setIsDragging] = useState(false);
 
   // Settings State
@@ -50,7 +53,7 @@ export const PixelGlitchModule: React.FC = () => {
       const image = new Image();
       image.onload = () => {
         setImg(image);
-        setStatus("IMAGE_BUFFERED // READY_FOR_DISTORTION");
+        setStatus("TARGET ACQUIRED!");
       };
       image.src = event.target?.result as string;
     };
@@ -104,7 +107,7 @@ export const PixelGlitchModule: React.FC = () => {
       ctx.drawImage(img, 0, 0, w, h);
       ctx.restore();
 
-      // Fallback for simple composite if shift is minimal, just draw normal to keep clarity
+      // Fallback for simple composite if shift is minimal
       ctx.globalCompositeOperation = "source-over";
       ctx.globalAlpha = 0.5;
       ctx.drawImage(img, 0, 0, w, h);
@@ -121,8 +124,6 @@ export const PixelGlitchModule: React.FC = () => {
         const sliceY = Math.random() * h;
         const offsetX = (Math.random() - 0.5) * (settings.fragmentation * 2);
 
-        // Copy a slice from the canvas itself (destructive editing simulation)
-        // Note: Getting ImageData is slow, using drawImage with params is faster
         ctx.drawImage(
           canvas,
           0,
@@ -142,7 +143,6 @@ export const PixelGlitchModule: React.FC = () => {
       ctx.save();
       ctx.globalCompositeOperation = "overlay";
       ctx.globalAlpha = settings.noise / 200; // Max 0.5 opacity
-      // Create noise pattern roughly
       const noiseCanvas = document.createElement("canvas");
       noiseCanvas.width = 100;
       noiseCanvas.height = 100;
@@ -183,20 +183,20 @@ export const PixelGlitchModule: React.FC = () => {
       ctx.globalCompositeOperation = settings.blendMode;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.font = `bold ${w / 15}px "Vazirmatn"`;
+      ctx.font = `bold ${w / 15}px "Courier New", monospace`;
       ctx.fillStyle = "#ffffff";
 
       // Main Center Text
       ctx.fillText(settings.textValue, w / 2, h / 2);
 
       // Scattered Characters
-      ctx.font = `${w / 30}px "Fira Code"`;
+      ctx.font = `${w / 30}px "Courier New", monospace`;
       ctx.globalAlpha = 0.6;
-      const seed = 5; // Fixed seed simulation
+      const seed = 5;
       for (let i = 0; i < seed; i++) {
         const x = (Math.sin(i) * 0.5 + 0.5) * w;
         const y = (Math.cos(i) * 0.5 + 0.5) * h;
-        ctx.fillText("ERR_NVRAM_" + i, x, y);
+        ctx.fillText("ERR_MORTUS_" + i, x, y);
       }
       ctx.restore();
     }
@@ -210,55 +210,107 @@ export const PixelGlitchModule: React.FC = () => {
   const downloadImage = () => {
     if (!canvasRef.current) return;
     const link = document.createElement("a");
-    link.download = `distorted_${Date.now()}.png`;
+    link.download = `mutant_art_${Date.now()}.png`;
     link.href = canvasRef.current.toDataURL("image/png");
     link.click();
-    setStatus("EXPORT_COMPLETE // FILE_SAVED");
+    setStatus("PAGE SAVED TO ARCHIVE!");
+  };
+
+  const resetSettings = () => {
+    setSettings({
+      rgbShift: 0,
+      fragmentation: 0,
+      scanlines: 0.1,
+      noise: 0,
+      textOverlay: false,
+      textValue: "خالی",
+      blendMode: "difference",
+    });
+    setStatus("CANVAS WIPED CLEAN");
   };
 
   return (
-    <div className="h-full flex flex-col p-2 md:p-6 overflow-hidden">
-      {/* Header Status Bar */}
-      <div className="flex justify-between items-center border-b border-fuchsia-500/20 pb-4 mb-4 shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-fuchsia-500/10 rounded-lg text-fuchsia-400">
-            <ImageIcon size={24} />
+    // THE VOID BACKGROUND
+    <div className="h-full flex flex-col p-4 md:p-6 overflow-hidden bg-[#1a1a1a] font-mono relative">
+      {/* Background Texture (Artist Desk) */}
+      <div className="absolute inset-0 opacity-10  bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-gray-700 via-black to-black"></div>
+
+      {/* HEADER: INVENTORY SLOTS */}
+      <div className="flex justify-between items-end mb-6 shrink-0 z-10">
+        {/* Left: Title Card */}
+        <div className="flex items-center gap-4">
+          <div className="bg-[#FFCC00] border-4 border-black p-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+            <h2 className="text-black font-black text-xl tracking-tighter uppercase italic">MORTUS ENGINE</h2>
           </div>
-          <div>
-            <h2 className="text-fuchsia-400 font-display text-2xl">موتور اعوجاج</h2>
-            <p className="text-[10px] font-mono text-gray-500">DISTORTION_ENGINE // V.2.0</p>
+          <div className="hidden md:block bg-black text-[#E07000] px-3 py-1 text-xs border-2 border-[#E07000]">
+            EPISODE 1: THE GLITCH
           </div>
         </div>
-        <div className="hidden md:flex gap-4 font-mono text-xs text-fuchsia-500/70 bg-fuchsia-900/10 px-4 py-2 rounded border border-fuchsia-500/10">
-          <span>STATUS: {status}</span>
+
+        {/* Right: Inventory Slots (Actions) */}
+        <div className="flex gap-3 items-center">
+          {/* Status Box (Narrator) */}
+          <div className="hidden lg:block bg-[#FFCC00] border-2 border-black px-4 py-2 text-xs font-bold text-black uppercase tracking-widest mr-4">
+            {status}
+          </div>
+
+          {/* Slot 1: Reset (Dynamite) */}
+          <button
+            onClick={resetSettings}
+            className="group relative w-12 h-12 bg-[#500050] border-4 border-black flex items-center justify-center hover:bg-red-600 transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none"
+            title="RESET CANVAS"
+          >
+            <RefreshCw size={20} className="text-white group-hover:animate-spin" />
+            <div className="absolute -top-2 -right-2 bg-yellow-400 text-black text-[8px] px-1 border border-black font-bold">
+              RST
+            </div>
+          </button>
+
+          {/* Slot 2: Download (Fist/Power) */}
+          <button
+            onClick={downloadImage}
+            disabled={!img}
+            className="group relative w-12 h-12 bg-[#E07000] border-4 border-black flex items-center justify-center hover:bg-white transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
+            title="SAVE PAGE"
+          >
+            <Download size={20} className="text-black group-hover:scale-110 transition-transform" />
+            <div className="absolute -top-2 -right-2 bg-yellow-400 text-black text-[8px] px-1 border border-black font-bold">
+              SAV
+            </div>
+          </button>
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6 flex-grow overflow-hidden">
-        {/* Left Panel: Controls */}
-        <div className="w-full lg:w-80 flex flex-col gap-4 overflow-y-auto custom-scrollbar pr-2 shrink-0">
+      <div className="flex flex-col lg:flex-row gap-8 flex-grow overflow-hidden z-10">
+        {/* LEFT PANEL: TOOLS (Comic Panel Style) */}
+        <div className="w-full lg:w-80 flex flex-col gap-6 overflow-y-auto custom-scrollbar pr-2 shrink-0 pb-10">
           {/* Upload Section */}
-          <div className="bg-panel-black border border-white/10 p-4 rounded-xl">
+          <div className="bg-white border-4 border-black p-4 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)] relative">
+            <div className="absolute -top-3 left-4 bg-black text-white px-2 text-xs font-bold uppercase">
+              PANEL 1: SOURCE
+            </div>
             <label className="flex flex-col gap-2 cursor-pointer group">
-              <div className="bg-white/5 border-2 border-dashed border-white/10 rounded-lg p-6 flex flex-col items-center justify-center text-gray-500 transition-colors group-hover:border-fuchsia-500/50 group-hover:text-fuchsia-400">
-                <Upload size={24} className="mb-2" />
-                <span className="text-xs font-mono">UPLOAD_SOURCE</span>
+              <div className="bg-[url('https://www.transparenttextures.com/patterns/notebook.png')] bg-[#f0f0f0] border-2 border-dashed border-black p-6 flex flex-col items-center justify-center text-black transition-colors group-hover:bg-[#FFCC00]">
+                <Upload size={32} className="mb-2 text-black" />
+                <span className="text-xs font-black uppercase">DROP INK HERE</span>
               </div>
               <input type="file" accept="image/*" onChange={handleUpload} className="hidden" />
             </label>
           </div>
 
           {/* Sliders Section */}
-          <div className="bg-panel-black border border-white/10 p-4 rounded-xl space-y-6">
-            <h3 className="text-gray-300 font-bold text-sm flex items-center gap-2 border-b border-white/10 pb-2">
-              <Sliders size={14} /> پارامترهای تخریب
-            </h3>
+          <div className="bg-white border-4 border-black p-4 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)] relative space-y-6">
+            <div className="absolute -top-3 left-4 bg-black text-white px-2 text-xs font-bold uppercase">
+              PANEL 2: DISTORTION
+            </div>
 
             {/* RGB Shift */}
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs font-mono text-fuchsia-300">
-                <span>CHROMATIC_SHIFT</span>
-                <span>{settings.rgbShift}px</span>
+            <div className="space-y-1">
+              <div className="flex justify-between text-xs font-bold text-black uppercase">
+                <span className="flex items-center gap-1">
+                  <Zap size={12} /> COLOR SHIFT
+                </span>
+                <span className="bg-black text-white px-1">{settings.rgbShift}</span>
               </div>
               <input
                 type="range"
@@ -266,15 +318,17 @@ export const PixelGlitchModule: React.FC = () => {
                 max="50"
                 value={settings.rgbShift}
                 onChange={(e) => setSettings({ ...settings, rgbShift: Number(e.target.value) })}
-                className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-fuchsia-500"
+                className="w-full h-4 bg-gray-300 border-2 border-black appearance-none cursor-pointer accent-[#E07000] hover:accent-[#FFCC00]"
               />
             </div>
 
             {/* Fragmentation */}
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs font-mono text-neon-blue">
-                <span>DATA_FRAGMENTATION</span>
-                <span>{settings.fragmentation}%</span>
+            <div className="space-y-1">
+              <div className="flex justify-between text-xs font-bold text-black uppercase">
+                <span className="flex items-center gap-1">
+                  <Layers size={12} /> TEAR PAPER
+                </span>
+                <span className="bg-black text-white px-1">{settings.fragmentation}%</span>
               </div>
               <input
                 type="range"
@@ -282,15 +336,17 @@ export const PixelGlitchModule: React.FC = () => {
                 max="100"
                 value={settings.fragmentation}
                 onChange={(e) => setSettings({ ...settings, fragmentation: Number(e.target.value) })}
-                className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-neon-blue"
+                className="w-full h-4 bg-gray-300 border-2 border-black appearance-none cursor-pointer accent-[#E07000] hover:accent-[#FFCC00]"
               />
             </div>
 
             {/* Noise */}
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs font-mono text-gray-400">
-                <span>SIGNAL_NOISE</span>
-                <span>{settings.noise}%</span>
+            <div className="space-y-1">
+              <div className="flex justify-between text-xs font-bold text-black uppercase">
+                <span className="flex items-center gap-1">
+                  <Skull size={12} /> GRIT
+                </span>
+                <span className="bg-black text-white px-1">{settings.noise}%</span>
               </div>
               <input
                 type="range"
@@ -298,15 +354,17 @@ export const PixelGlitchModule: React.FC = () => {
                 max="100"
                 value={settings.noise}
                 onChange={(e) => setSettings({ ...settings, noise: Number(e.target.value) })}
-                className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-gray-500"
+                className="w-full h-4 bg-gray-300 border-2 border-black appearance-none cursor-pointer accent-[#E07000] hover:accent-[#FFCC00]"
               />
             </div>
 
             {/* Scanlines */}
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs font-mono text-gray-400">
-                <span>CRT_SCANLINES</span>
-                <span>{(settings.scanlines * 100).toFixed(0)}%</span>
+            <div className="space-y-1">
+              <div className="flex justify-between text-xs font-bold text-black uppercase">
+                <span className="flex items-center gap-1">
+                  <Monitor size={12} /> VDP LINES
+                </span>
+                <span className="bg-black text-white px-1">{(settings.scanlines * 100).toFixed(0)}%</span>
               </div>
               <input
                 type="range"
@@ -315,25 +373,29 @@ export const PixelGlitchModule: React.FC = () => {
                 step="0.1"
                 value={settings.scanlines}
                 onChange={(e) => setSettings({ ...settings, scanlines: Number(e.target.value) })}
-                className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-gray-500"
+                className="w-full h-4 bg-gray-300 border-2 border-black appearance-none cursor-pointer accent-[#E07000] hover:accent-[#FFCC00]"
               />
             </div>
           </div>
 
           {/* Text Injection Section */}
-          <div className="bg-panel-black border border-white/10 p-4 rounded-xl space-y-4">
-            <div className="flex items-center justify-between border-b border-white/10 pb-2">
-              <h3 className="text-gray-300 font-bold text-sm flex items-center gap-2">
-                <Type size={14} /> تزریق متن
+          <div className="bg-white border-4 border-black p-4 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)] relative">
+            <div className="absolute -top-3 left-4 bg-black text-white px-2 text-xs font-bold uppercase">
+              PANEL 3: DIALOGUE
+            </div>
+
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-black font-bold text-xs flex items-center gap-2 uppercase">
+                <Type size={14} /> SPEECH BUBBLE
               </h3>
               <button
                 onClick={() => setSettings({ ...settings, textOverlay: !settings.textOverlay })}
-                className={`w-8 h-4 rounded-full relative transition-colors ${
-                  settings.textOverlay ? "bg-fuchsia-600" : "bg-gray-700"
+                className={`w-10 h-5 border-2 border-black relative transition-colors ${
+                  settings.textOverlay ? "bg-[#E07000]" : "bg-gray-300"
                 }`}
               >
                 <div
-                  className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${
+                  className={`absolute top-0.5 w-3 h-3 bg-black transition-all ${
                     settings.textOverlay ? "left-1" : "right-1"
                   }`}
                 ></div>
@@ -341,72 +403,49 @@ export const PixelGlitchModule: React.FC = () => {
             </div>
 
             {settings.textOverlay && (
-              <div className="space-y-3 animate-in slide-in-from-top-2 duration-300">
-                <input
-                  type="text"
-                  value={settings.textValue}
-                  onChange={(e) => setSettings({ ...settings, textValue: e.target.value })}
-                  className="w-full bg-black/40 border border-white/10 rounded px-2 py-2 text-xs text-white outline-none focus:border-fuchsia-500"
-                  dir="rtl"
-                  placeholder="متن خود را بنویسید..."
-                />
-                <div className="flex gap-2 text-[10px] font-mono text-gray-500">
+              <div className="space-y-3">
+                {/* Speech Bubble Input */}
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={settings.textValue}
+                    onChange={(e) => setSettings({ ...settings, textValue: e.target.value })}
+                    className="w-full bg-white border-2 border-black rounded-[50%] px-4 py-3 text-xs text-black font-bold text-center outline-none focus:bg-[#FFCC00] transition-colors"
+                    dir="rtl"
+                    placeholder="متن..."
+                  />
+                  {/* Bubble Tail */}
+                  <div className="absolute -bottom-2 right-4 w-4 h-4 bg-white border-r-2 border-b-2 border-black rotate-45 z-0"></div>
+                </div>
+
+                <div className="flex gap-2 text-[10px] font-bold uppercase pt-2">
                   <button
                     onClick={() => setSettings({ ...settings, blendMode: "difference" })}
-                    className={`px-2 py-1 rounded border ${
+                    className={`px-2 py-1 border-2 border-black ${
                       settings.blendMode === "difference"
-                        ? "border-fuchsia-500 text-fuchsia-400"
-                        : "border-white/10"
+                        ? "bg-black text-white"
+                        : "bg-white text-black hover:bg-gray-200"
                     }`}
                   >
-                    DIFFERENCE
+                    DIFF
                   </button>
                   <button
                     onClick={() => setSettings({ ...settings, blendMode: "overlay" })}
-                    className={`px-2 py-1 rounded border ${
+                    className={`px-2 py-1 border-2 border-black ${
                       settings.blendMode === "overlay"
-                        ? "border-fuchsia-500 text-fuchsia-400"
-                        : "border-white/10"
+                        ? "bg-black text-white"
+                        : "bg-white text-black hover:bg-gray-200"
                     }`}
                   >
-                    OVERLAY
+                    OVER
                   </button>
                 </div>
               </div>
             )}
           </div>
-
-          {/* Actions */}
-          <div className="flex gap-2">
-            <button
-              onClick={() => {
-                setSettings({
-                  rgbShift: 0,
-                  fragmentation: 0,
-                  scanlines: 0.1,
-                  noise: 0,
-                  textOverlay: false,
-                  textValue: "خالی",
-                  blendMode: "difference",
-                });
-                setStatus("SETTINGS_RESET");
-              }}
-              className="p-3 rounded-lg bg-red-900/20 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors"
-              title="Reset"
-            >
-              <RefreshCw size={18} />
-            </button>
-            <button
-              onClick={downloadImage}
-              disabled={!img}
-              className="flex-grow py-3 rounded-lg bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-bold text-sm shadow-[0_0_15px_rgba(217,70,239,0.3)] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Download size={18} /> دریافت خروجی
-            </button>
-          </div>
         </div>
 
-        {/* Right Panel: Canvas Viewport */}
+        {/* RIGHT PANEL: CANVAS (The Main Page) */}
         <div
           ref={containerRef}
           onDragOver={(e) => {
@@ -415,34 +454,41 @@ export const PixelGlitchModule: React.FC = () => {
           }}
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleDrop}
-          className={`flex-grow bg-[#050505] border-2 rounded-xl relative overflow-hidden flex items-center justify-center transition-colors
-                        ${isDragging ? "border-fuchsia-500 bg-fuchsia-900/10" : "border-white/10"}
+          className={`flex-grow relative flex items-center justify-center transition-all duration-200
+                        ${isDragging ? "bg-[#E07000]" : "bg-[#2a2a2a]"}
                     `}
         >
-          {/* Background Grid */}
-          <div className="absolute inset-0 z-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:20px_20px] "></div>
+          {/* The White Page Container */}
+          <div className="relative p-1 bg-white border-4 border-black shadow-[15px_15px_0px_0px_rgba(0,0,0,0.8)] rotate-1 max-w-full max-h-full overflow-hidden">
+            {/* Gutter / Safe Zone */}
+            <div className="border-2 border-black m-1 relative bg-white min-w-[300px] min-h-[300px] flex items-center justify-center overflow-hidden">
+              {!img ? (
+                <div className="text-center text-black z-10 p-10">
+                  <div className="w-24 h-24 border-4 border-black flex items-center justify-center mx-auto mb-4 bg-[#FFCC00] animate-bounce">
+                    <Hand size={40} />
+                  </div>
+                  <p className="font-black text-lg mb-1 uppercase tracking-widest">NO SIGNAL</p>
+                  <p className="text-xs font-bold bg-black text-white inline-block px-2 py-1">
+                    INSERT CARTRIDGE (IMAGE)
+                  </p>
+                </div>
+              ) : (
+                <canvas ref={canvasRef} className="max-w-full max-h-full object-contain" />
+              )}
 
-          {!img ? (
-            <div className="text-center text-gray-600 z-10 ">
-              <div className="w-20 h-20 border-2 border-dashed border-gray-700 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-                <Monitor size={32} />
+              {/* Overlay HUD Elements (Comic Style) */}
+              <div className="absolute top-0 left-0 z-20">
+                <div className="bg-[#FFCC00] border-r-2 border-b-2 border-black px-2 py-1 text-[10px] font-black text-black">
+                  RES: {canvasRef.current ? `${canvasRef.current.width}x${canvasRef.current.height}` : "0x0"}
+                </div>
               </div>
-              <p className="font-mono text-sm mb-1">NO_SOURCE_DETECTED</p>
-              <p className="text-xs opacity-50">DRAG & DROP IMAGE HERE</p>
-            </div>
-          ) : (
-            <canvas ref={canvasRef} className="max-w-full max-h-full shadow-2xl z-10" />
-          )}
 
-          {/* Overlay HUD Elements */}
-          <div className="absolute top-4 left-4 z-20 flex gap-2">
-            <div className="bg-black/70 backdrop-blur px-2 py-1 rounded text-[10px] font-mono text-fuchsia-500 border border-fuchsia-500/30">
-              RES: {canvasRef.current ? `${canvasRef.current.width}x${canvasRef.current.height}` : "0x0"}
-            </div>
-          </div>
-          <div className="absolute bottom-4 right-4 z-20">
-            <div className="flex items-center gap-1 text-[10px] font-mono text-gray-500 bg-black/50 px-2 rounded">
-              <Eye size={10} /> PREVIEW_MODE
+              {/* "POW" Effect on corner */}
+              <div className="absolute bottom-2 right-2 z-20 ">
+                <div className="text-[10px] font-black text-white bg-red-600 px-2 py-1 border-2 border-black -rotate-3 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                  LIVE FEED
+                </div>
+              </div>
             </div>
           </div>
         </div>

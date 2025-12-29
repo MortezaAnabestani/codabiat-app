@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Settings, Eraser, Download, PenTool, Palette, Sparkles, Sliders } from "lucide-react";
+import { Settings, Eraser, Download, PenTool, Palette, Sparkles, Sliders, Zap, Skull } from "lucide-react";
 
 type PaletteType = "neon" | "fire" | "ice" | "mono";
 
@@ -51,7 +51,7 @@ export const AlgorithmicCalligraphyModule: React.FC = () => {
       p.setup = () => {
         p.createCanvas(containerRef.current?.offsetWidth || 800, containerRef.current?.offsetHeight || 600);
         p.background(5);
-        p.textFont("Vazirmatn");
+        p.textFont("Courier New"); // Changed to a more retro font fallback
         p.textAlign(p.CENTER, p.CENTER);
       };
 
@@ -146,43 +146,80 @@ export const AlgorithmicCalligraphyModule: React.FC = () => {
 
   const downloadCanvas = () => {
     if (p5Instance.current) {
-      p5Instance.current.saveCanvas("word_splash_art", "png");
+      p5Instance.current.saveCanvas("comix_zone_art", "png");
     }
   };
 
   return (
-    <div className="h-full flex flex-col relative bg-[#050505] overflow-hidden group">
-      {/* HUD Controls */}
-      <div className="absolute top-4 right-4 z-20 w-72 flex flex-col gap-3 ">
-        {/* Main Panel */}
-        <div className="bg-black/80 backdrop-blur-md border border-pink-500/30 p-4 rounded-xl shadow-2xl pointer-events-auto">
-          <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-4">
-            <h3 className="text-pink-400 font-display text-sm flex items-center gap-2">
-              <PenTool size={16} /> رنگ‌پاشی با کلمات
-            </h3>
-            <div
-              className={`w-2 h-2 rounded-full ${isDrawing ? "bg-pink-500 animate-ping" : "bg-gray-600"}`}
-            ></div>
+    // THE VOID (Artist's Desk Background) - Bruised Purple
+    <div className="h-full w-full flex flex-col md:flex-row bg-[#500050] relative overflow-hidden font-mono p-4 gap-4">
+      {/* DECORATIVE: Scattered Pencils/Elements in Background */}
+      <div className="absolute top-10 left-10 text-[#300030] transform -rotate-12 pointer-events-none select-none text-9xl font-black opacity-20">
+        INK
+      </div>
+      <div className="absolute bottom-10 right-10 text-[#300030] transform rotate-6 pointer-events-none select-none text-9xl font-black opacity-20">
+        ZONE
+      </div>
+
+      {/* LEFT: THE COMIC PANEL (Canvas) */}
+      <div className="flex-grow relative z-10 order-2 md:order-1 h-[60vh] md:h-auto">
+        {/* The Gutter (White Space) & Border */}
+        <div className="w-full h-full bg-white p-2 border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)] transform rotate-[-1deg] transition-transform hover:rotate-0 duration-300">
+          {/* Inner Black Border */}
+          <div className="w-full h-full border-4 border-black relative bg-[#050505] overflow-hidden">
+            {/* Canvas Container */}
+            <div ref={containerRef} className="w-full h-full cursor-crosshair touch-none" />
+
+            {/* Onomatopoeia Hint */}
+            {!isDrawing && (
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+                <div className="text-[#E07000] text-4xl font-black animate-pulse tracking-widest drop-shadow-[4px_4px_0px_#000]">
+                  DRAW!
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* RIGHT: THE INVENTORY (Controls) */}
+      <div className="w-full md:w-80 flex flex-col gap-4 z-20 order-1 md:order-2">
+        {/* HEADER: NARRATOR BOX */}
+        <div className="bg-[#FFCC00] border-4 border-black p-3 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+          <h3 className="text-black font-black text-lg uppercase tracking-tighter flex items-center gap-2">
+            <PenTool className="w-6 h-6" strokeWidth={3} />
+            EPISODE 1: INK
+          </h3>
+          <div className="h-1 w-full bg-black mt-1 mb-2"></div>
+          <p className="text-xs font-bold text-black leading-tight">
+            "THE ARTIST PREPARES HIS WEAPON. WORDS BECOME MATTER IN THIS DIMENSION."
+          </p>
+        </div>
+
+        {/* CONTROLS CONTAINER */}
+        <div className="bg-white border-4 border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex flex-col gap-5">
+          {/* INPUT: SPEECH BUBBLE STYLE */}
+          <div className="relative">
+            <label className="text-xs font-black bg-black text-white px-2 py-1 inline-block mb-1 transform -skew-x-12">
+              TEXT_INPUT
+            </label>
+            <input
+              type="text"
+              value={brushText}
+              onChange={(e) => setBrushText(e.target.value)}
+              className="w-full bg-[#eee] border-2 border-black p-3 text-black font-bold text-sm outline-none focus:bg-[#fff] focus:shadow-[inset_0_0_0_2px_#E07000] transition-all"
+              dir="rtl"
+            />
+            {/* Bubble Tail */}
+            <div className="absolute -bottom-2 right-4 w-3 h-3 bg-[#eee] border-r-2 border-b-2 border-black transform rotate-45"></div>
           </div>
 
+          {/* SLIDERS: RETRO BARS */}
           <div className="space-y-4">
-            {/* Input */}
             <div>
-              <label className="text-[10px] text-gray-500 font-mono mb-1 block">BRUSH_TEXT</label>
-              <input
-                type="text"
-                value={brushText}
-                onChange={(e) => setBrushText(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 p-2 text-pink-100 text-xs rounded outline-none focus:border-pink-500 transition-colors text-center"
-                dir="rtl"
-              />
-            </div>
-
-            {/* Sliders */}
-            <div>
-              <div className="flex justify-between text-[10px] text-gray-500 font-mono mb-1">
-                <span>SIZE</span>
-                <span>{brushSize}px</span>
+              <div className="flex justify-between text-xs font-black mb-1">
+                <span className="text-[#006000]">BRUSH_SIZE</span>
+                <span className="bg-black text-[#00ff00] px-1 font-mono">{brushSize}PX</span>
               </div>
               <input
                 type="range"
@@ -190,13 +227,13 @@ export const AlgorithmicCalligraphyModule: React.FC = () => {
                 max="100"
                 value={brushSize}
                 onChange={(e) => setBrushSize(Number(e.target.value))}
-                className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-pink-500"
+                className="w-full h-4 bg-gray-300 rounded-none appearance-none border-2 border-black cursor-pointer accent-[#E07000]"
               />
             </div>
             <div>
-              <div className="flex justify-between text-[10px] text-gray-500 font-mono mb-1">
-                <span>CHAOS (SCATTER)</span>
-                <span>{chaos * 10}%</span>
+              <div className="flex justify-between text-xs font-black mb-1">
+                <span className="text-[#500050]">CHAOS_LEVEL</span>
+                <span className="bg-black text-[#ff00ff] px-1 font-mono">{Math.floor(chaos * 10)}%</span>
               </div>
               <input
                 type="range"
@@ -205,72 +242,75 @@ export const AlgorithmicCalligraphyModule: React.FC = () => {
                 step="0.5"
                 value={chaos}
                 onChange={(e) => setChaos(Number(e.target.value))}
-                className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-pink-500"
+                className="w-full h-4 bg-gray-300 rounded-none appearance-none border-2 border-black cursor-pointer accent-[#500050]"
               />
             </div>
+          </div>
 
-            {/* Palettes */}
-            <div>
-              <label className="text-[10px] text-gray-500 font-mono mb-2 block flex items-center gap-1">
-                <Palette size={10} /> COLOR_MATRIX
-              </label>
-              <div className="grid grid-cols-4 gap-2">
-                {Object.keys(palettes).map((key) => (
-                  <button
-                    key={key}
-                    onClick={() => setPalette(key as PaletteType)}
-                    className={`h-8 rounded border transition-all relative overflow-hidden ${
-                      palette === key
-                        ? "border-pink-500 scale-105 shadow-[0_0_10px_rgba(236,72,153,0.3)]"
-                        : "border-white/10 opacity-70 hover:opacity-100"
+          {/* PALETTE: GEMS */}
+          <div>
+            <label className="text-xs font-black bg-black text-white px-2 py-1 inline-block mb-2 transform -skew-x-12">
+              INK_TYPE
+            </label>
+            <div className="grid grid-cols-4 gap-2">
+              {Object.keys(palettes).map((key) => (
+                <button
+                  key={key}
+                  onClick={() => setPalette(key as PaletteType)}
+                  className={`h-10 border-2 border-black transition-all relative group ${
+                    palette === key ? "shadow-[inset_0_0_0_4px_#000] scale-105" : "hover:opacity-80"
+                  }`}
+                >
+                  <div
+                    className={`absolute inset-0 ${
+                      key === "neon"
+                        ? "bg-gradient-to-br from-[#ff00ff] to-[#00ffff]"
+                        : key === "fire"
+                        ? "bg-gradient-to-br from-[#ff0000] to-[#ffff00]"
+                        : key === "ice"
+                        ? "bg-gradient-to-br from-[#00ffff] to-[#ffffff]"
+                        : "bg-gradient-to-br from-[#555] to-[#000]"
                     }`}
-                  >
-                    <div
-                      className={`absolute inset-0 bg-gradient-to-br ${
-                        key === "neon"
-                          ? "from-fuchsia-500 to-cyan-500"
-                          : key === "fire"
-                          ? "from-red-500 to-yellow-500"
-                          : key === "ice"
-                          ? "from-blue-400 to-white"
-                          : "from-gray-800 to-white"
-                      }`}
-                    ></div>
-                  </button>
-                ))}
-              </div>
+                  ></div>
+                  {/* Selection Indicator */}
+                  {palette === key && (
+                    <div className="absolute -top-2 -right-2 bg-[#E07000] border border-black w-4 h-4 flex items-center justify-center">
+                      <div className="w-1 h-1 bg-white"></div>
+                    </div>
+                  )}
+                </button>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex gap-2 pointer-events-auto">
+        {/* ACTION SLOTS (INVENTORY STYLE) */}
+        <div className="grid grid-cols-2 gap-3">
+          {/* SLOT 1: CLEAR (DYNAMITE) */}
           <button
             onClick={clearCanvas}
-            className="flex-1 bg-red-900/20 hover:bg-red-500/20 border border-red-500/30 text-red-400 p-2 rounded text-xs font-bold transition-colors flex items-center justify-center gap-2"
+            className="group relative bg-[#222] border-4 border-[#FFCC00] h-16 flex items-center justify-center hover:bg-[#333] active:translate-y-1 transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
           >
-            <Eraser size={14} /> پاکسازی
+            <div className="absolute top-1 left-1 text-[10px] text-[#FFCC00] font-mono">ITEM_01</div>
+            <div className="flex flex-col items-center">
+              <Skull className="text-red-500 w-6 h-6 group-hover:animate-bounce" />
+              <span className="text-[#FFCC00] text-[10px] font-black mt-1 uppercase">WIPE</span>
+            </div>
           </button>
+
+          {/* SLOT 2: SAVE (DISK) */}
           <button
             onClick={downloadCanvas}
-            className="flex-1 bg-pink-600 hover:bg-pink-500 text-white p-2 rounded text-xs font-bold transition-colors shadow-[0_0_15px_rgba(236,72,153,0.3)] flex items-center justify-center gap-2"
+            className="group relative bg-[#222] border-4 border-[#FFCC00] h-16 flex items-center justify-center hover:bg-[#333] active:translate-y-1 transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
           >
-            <Download size={14} /> ذخیره
+            <div className="absolute top-1 left-1 text-[10px] text-[#FFCC00] font-mono">ITEM_02</div>
+            <div className="flex flex-col items-center">
+              <Download className="text-cyan-400 w-6 h-6 group-hover:animate-pulse" />
+              <span className="text-[#FFCC00] text-[10px] font-black mt-1 uppercase">SAVE</span>
+            </div>
           </button>
         </div>
       </div>
-
-      {/* Canvas Container */}
-      <div ref={containerRef} className="w-full h-full cursor-crosshair touch-none" />
-
-      {/* Hint Overlay */}
-      {!isDrawing && (
-        <div className="absolute bottom-4 left-4  opacity-50 animate-pulse">
-          <div className="bg-black/50 backdrop-blur px-3 py-1 rounded-full border border-white/10 text-[10px] font-mono text-gray-400 flex items-center gap-2">
-            <Sparkles size={12} /> DRAG TO PAINT WITH WORDS
-          </div>
-        </div>
-      )}
     </div>
   );
 };

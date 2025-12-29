@@ -31,6 +31,9 @@ import {
   Minimize2,
   ChevronRight,
   ChevronLeft,
+  ShieldAlert,
+  Grid3X3,
+  Monitor,
 } from "lucide-react";
 
 // Import modules (Keep existing imports)
@@ -54,6 +57,9 @@ import { SemanticClusterModule } from "./lab/visual/SemanticClusterModule";
 import { SonificationModule } from "./lab/visual/SonificationModule";
 import { PoetryExcavationModule } from "./lab/visual/PoetryExcavationModule";
 import { BioSynthesisModule } from "./lab/visual/BioSynthesisModule";
+import { CyberBreachModule } from "./lab/visual/CyberBreachModule";
+import { CyberWeaverModule } from "./lab/visual/CyberWeaverModule";
+import { RetroConsoleModule } from "./lab/visual/RetroConsoleModule";
 import { TextOrbModule } from "./lab/three/TextOrbModule";
 import { BlindOwlModule } from "./lab/three/BlindOwlModule";
 
@@ -89,7 +95,10 @@ type ToolMode =
   | "fiction"
   | "datadriven"
   | "locative"
-  | "hypertext";
+  | "hypertext"
+  | "cyberbreach"
+  | "cyberweaver"
+  | "retroconsole";
 
 // --- COMIC UI COMPONENTS ---
 
@@ -223,7 +232,7 @@ export const Lab: React.FC = () => {
       `}</style>
 
       {/* --- BACKGROUND ELEMENTS (The Artist's Desk) --- */}
-      <div className="fixed inset-0  opacity-10 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]"></div>
+      <div className="fixed inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]"></div>
 
       {/* --- INVENTORY (Header) - Only shown in non-fullscreen --- */}
       {!isFullscreen && (
@@ -267,7 +276,7 @@ export const Lab: React.FC = () => {
       {isFullscreen && isSidebarOpen && (
         <div
           onClick={() => setIsSidebarOpen(false)}
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity"
+          className="fixed inset-0 bg-black bg-opacity-50 z-100 transition-opacity"
         />
       )}
 
@@ -482,6 +491,27 @@ export const Lab: React.FC = () => {
                 active={activeTool === "blindowl"}
                 onClick={() => handleToolChange("blindowl")}
               />
+              <ComicButton
+                id="cyberbreach"
+                label="Cyber Breach"
+                icon={ShieldAlert}
+                active={activeTool === "cyberbreach"}
+                onClick={() => handleToolChange("cyberbreach")}
+              />
+              <ComicButton
+                id="cyberweaver"
+                label="Cyber Weaver"
+                icon={Grid3X3}
+                active={activeTool === "cyberweaver"}
+                onClick={() => handleToolChange("cyberweaver")}
+              />
+              <ComicButton
+                id="retroconsole"
+                label="Retro Console"
+                icon={Monitor}
+                active={activeTool === "retroconsole"}
+                onClick={() => handleToolChange("retroconsole")}
+              />
             </div>
           </div>
         </div>
@@ -556,6 +586,9 @@ export const Lab: React.FC = () => {
                   {activeTool === "d3" && <SemanticClusterModule />}
                   {activeTool === "sonification" && <SonificationModule />}
                   {activeTool === "bio" && <BioSynthesisModule />}
+                  {activeTool === "cyberbreach" && <CyberBreachModule />}
+                  {activeTool === "cyberweaver" && <CyberWeaverModule />}
+                  {activeTool === "retroconsole" && <RetroConsoleModule />}
                 </div>
               </div>
 

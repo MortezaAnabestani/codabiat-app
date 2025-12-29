@@ -1,18 +1,19 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-// Add missing RefreshCw import from lucide-react
 import {
   Monitor,
-  Gamepad,
   Zap,
   Heart,
   Trophy,
   Terminal,
   ShieldAlert,
-  Cpu,
   Keyboard,
   RefreshCw,
+  Skull,
+  Scroll,
+  Hand,
 } from "lucide-react";
 
+// --- TYPES ---
 interface Tile {
   char: string;
   type: "floor" | "wall" | "item" | "enemy" | "goal";
@@ -23,8 +24,62 @@ interface Tile {
 const GRID_SIZE = 15;
 const INITIAL_INTEGRITY = 100;
 
+// --- STYLES (INJECTED FOR COMIX ZONE FEEL) ---
+const comixStyles = `
+  @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Permanent+Marker&display=swap');
+
+  .font-comic { font-family: 'Bangers', cursive; letter-spacing: 1px; }
+  .font-hand { font-family: 'Permanent Marker', cursive; }
+  
+  /* The Void / Artist Desk Texture */
+  .bg-artist-desk {
+    background-color: #1a1a1a;
+    background-image: 
+      radial-gradient(#333 1px, transparent 1px),
+      radial-gradient(#222 1px, transparent 1px);
+    background-position: 0 0, 25px 25px;
+    background-size: 50px 50px;
+  }
+
+  /* Rough Ink Borders */
+  .panel-border {
+    border: 4px solid #000;
+    box-shadow: 5px 5px 0px #000;
+    clip-path: polygon(
+      0% 2%, 2% 0%, 98% 1%, 100% 3%, 
+      99% 98%, 97% 100%, 2% 99%, 0% 97%
+    );
+  }
+
+  /* Sega Inventory Slot */
+  .inventory-slot {
+    background: linear-gradient(135deg, #FFCC00 0%, #E07000 100%);
+    border: 3px solid #000;
+    box-shadow: inset 2px 2px 0px rgba(255,255,255,0.4), inset -2px -2px 0px rgba(0,0,0,0.4);
+  }
+
+  /* Mortus Hand Reveal Animation */
+  @keyframes drawReveal {
+    0% { clip-path: inset(0 100% 0 0); }
+    100% { clip-path: inset(0 0 0 0); }
+  }
+  .animate-draw {
+    animation: drawReveal 0.8s steps(10) forwards;
+  }
+
+  /* Onomatopoeia Pop */
+  @keyframes powPop {
+    0% { transform: scale(0) rotate(-10deg); opacity: 0; }
+    50% { transform: scale(1.5) rotate(10deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  }
+  .pop-effect {
+    animation: powPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  }
+`;
+
 export const RetroConsoleModule: React.FC = () => {
-  // --- State ---
+  // --- State (UNCHANGED) ---
   const [player, setPlayer] = useState({ x: 1, y: 1 });
   const [grid, setGrid] = useState<Tile[][]>([]);
   const [integrity, setIntegrity] = useState(INITIAL_INTEGRITY);
@@ -35,7 +90,7 @@ export const RetroConsoleModule: React.FC = () => {
 
   const audioContextRef = useRef<AudioContext | null>(null);
 
-  // --- Audio Feedback (8-bit style) ---
+  // --- Audio Feedback (UNCHANGED) ---
   const playBeep = (freq: number, type: OscillatorType = "square", dur = 0.1) => {
     if (!audioContextRef.current)
       audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -53,12 +108,10 @@ export const RetroConsoleModule: React.FC = () => {
   };
 
   const addLog = (msg: string) => {
-    setLogs((prev) =>
-      [`[${new Date().toLocaleTimeString("en-GB", { hour12: false })}] ${msg}`, ...prev].slice(0, 5)
-    );
+    setLogs((prev) => [`> ${msg.toUpperCase()}`, ...prev].slice(0, 5));
   };
 
-  // --- Grid Generation ---
+  // --- Grid Generation (UNCHANGED) ---
   const initGame = useCallback(() => {
     const poemWords = ["در", "ازل", "پرتو", "حسنت", "ز", "تجلی", "دم", "زد"];
     const newGrid: Tile[][] = [];
@@ -66,7 +119,6 @@ export const RetroConsoleModule: React.FC = () => {
     for (let y = 0; y < GRID_SIZE; y++) {
       const row: Tile[] = [];
       for (let x = 0; x < GRID_SIZE; x++) {
-        // Outer Walls
         if (x === 0 || y === 0 || x === GRID_SIZE - 1 || y === GRID_SIZE - 1) {
           row.push({ char: "█", type: "wall", discovered: true });
         } else if (Math.random() < 0.15) {
@@ -78,11 +130,9 @@ export const RetroConsoleModule: React.FC = () => {
       newGrid.push(row);
     }
 
-    // Place Player
     setPlayer({ x: 1, y: 1 });
     newGrid[1][1].discovered = true;
 
-    // Place Items (Poem Words)
     poemWords.forEach((word) => {
       let placed = false;
       while (!placed) {
@@ -95,7 +145,6 @@ export const RetroConsoleModule: React.FC = () => {
       }
     });
 
-    // Place Enemies (Data Corruptors)
     for (let i = 0; i < 5; i++) {
       const rx = Math.floor(Math.random() * (GRID_SIZE - 2)) + 1;
       const ry = Math.floor(Math.random() * (GRID_SIZE - 2)) + 1;
@@ -104,7 +153,6 @@ export const RetroConsoleModule: React.FC = () => {
       }
     }
 
-    // Place Goal (Portal)
     newGrid[GRID_SIZE - 2][GRID_SIZE - 2] = { char: "Ω", type: "goal", discovered: false };
 
     setGrid(newGrid);
@@ -112,10 +160,10 @@ export const RetroConsoleModule: React.FC = () => {
     setScore(0);
     setCollectedWords([]);
     setGameState("playing");
-    setLogs(["[SYSTEM] BOOT_SEQUENCE_COMPLETE", "[INFO] NAVIGATE WITH ARROWS"]);
+    setLogs(["EPISODE 1: THE VOID", "MISSION: RECOVER FRAGMENTS"]);
   }, []);
 
-  // --- Movement Logic ---
+  // --- Movement Logic (UNCHANGED) ---
   const movePlayer = (dx: number, dy: number) => {
     if (gameState !== "playing") return;
 
@@ -130,31 +178,29 @@ export const RetroConsoleModule: React.FC = () => {
       return;
     }
 
-    // Handle Interactions
     const newGrid = [...grid];
     if (targetTile.type === "item") {
-      addLog(`ARTIFACT_FOUND: ${targetTile.word}`);
+      addLog(`FRAGMENT FOUND: ${targetTile.word}`);
       setCollectedWords((prev) => [...prev, targetTile.word!]);
       setScore((s) => s + 50);
       playBeep(880, "square", 0.2);
       newGrid[newY][newX] = { char: "·", type: "floor", discovered: true };
     } else if (targetTile.type === "enemy") {
-      addLog("ALERT: SEMANTIC_CORRUPTION_DETECTED");
+      addLog("OUCH! MUTANT ATTACK!");
       setIntegrity((i) => Math.max(0, i - 20));
       playBeep(150, "sawtooth", 0.3);
       newGrid[newY][newX] = { char: "·", type: "floor", discovered: true };
     } else if (targetTile.type === "goal") {
       if (collectedWords.length >= 4) {
         setGameState("won");
-        addLog("LEVEL_CLEARED: REALITY_STABILIZED");
+        addLog("PAGE COMPLETE! NEXT EPISODE...");
         playBeep(1200, "square", 0.5);
       } else {
-        addLog("ERROR: INSUFFICIENT_SEMANTIC_DATA");
+        addLog("LOCKED! NEED MORE INK...");
         playBeep(200, "sine", 0.2);
       }
     }
 
-    // Discover surrounding tiles
     for (let iy = -1; iy <= 1; iy++) {
       for (let ix = -1; ix <= 1; ix++) {
         const vx = newX + ix;
@@ -170,7 +216,7 @@ export const RetroConsoleModule: React.FC = () => {
     playBeep(440, "triangle", 0.02);
   };
 
-  // --- Key Listeners ---
+  // --- Key Listeners (UNCHANGED) ---
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
@@ -189,221 +235,251 @@ export const RetroConsoleModule: React.FC = () => {
   useEffect(() => {
     if (integrity <= 0 && gameState === "playing") {
       setGameState("lost");
-      addLog("FATAL_ERROR: MEMORY_CORRUPTED");
+      addLog("GAME OVER: INK DRIED OUT");
     }
   }, [integrity, gameState]);
 
+  // --- RENDER HELPERS ---
+  const getTileStyle = (tile: Tile, isPlayer: boolean) => {
+    if (isPlayer) return "text-[#E07000] z-20 scale-125 drop-shadow-[2px_2px_0_rgba(0,0,0,1)]";
+    if (!tile.discovered) return "opacity-0";
+
+    switch (tile.type) {
+      case "wall":
+        return "text-black bg-black/10";
+      case "item":
+        return "text-[#FFCC00] animate-pulse drop-shadow-[0_0_5px_#E07000]";
+      case "enemy":
+        return "text-[#500050] animate-bounce font-bold";
+      case "goal":
+        return "text-[#006000] animate-spin-slow font-black";
+      default:
+        return "text-gray-400";
+    }
+  };
+
   return (
-    <div className="h-full flex flex-col md:flex-row bg-[#020402] overflow-hidden font-mono">
-      {/* Left Panel: Console HUD */}
-      <div className="w-full md:w-80 p-6 flex flex-col gap-6 border-l border-[#00ff41]/20 z-20 bg-black shrink-0 overflow-y-auto custom-scrollbar">
-        <div className="flex items-center gap-3 border-b border-[#00ff41]/20 pb-4">
-          <div className="p-2 bg-[#00ff41]/10 rounded-lg text-[#00ff41]">
-            <Monitor size={24} />
+    <div className="h-full w-full bg-artist-desk flex flex-col items-center justify-center p-4 overflow-hidden relative font-comic select-none">
+      <style>{comixStyles}</style>
+
+      {/* --- THE INVENTORY STRIP (HEADER) --- */}
+      <div className="w-full max-w-4xl flex justify-between items-end mb-4 px-2 z-30">
+        {/* Left: Status Slots */}
+        <div className="flex gap-3">
+          {/* Slot 1: Integrity */}
+          <div className="inventory-slot w-16 h-16 flex flex-col items-center justify-center relative group transform -rotate-2 hover:rotate-0 transition-transform">
+            <div className="absolute -top-2 -left-2 bg-white border-2 border-black px-1 text-[10px] font-bold rotate-[-5deg]">
+              HP
+            </div>
+            <Heart
+              size={24}
+              className={`${integrity < 30 ? "text-red-600 animate-ping" : "text-red-600"}`}
+              fill="currentColor"
+            />
+            <span className="text-black font-black text-lg leading-none mt-1">{integrity}</span>
           </div>
-          <div>
-            <h2 className="text-[#00ff41] font-display text-xl tracking-tight uppercase">هزارتوی نویسه‌ها</h2>
-            <p className="text-[9px] text-gray-500 uppercase tracking-widest">ASCII_Crawler_v8.1</p>
+
+          {/* Slot 2: Score */}
+          <div className="inventory-slot w-16 h-16 flex flex-col items-center justify-center relative transform rotate-1 hover:rotate-0 transition-transform">
+            <div className="absolute -top-2 -right-2 bg-white border-2 border-black px-1 text-[10px] font-bold rotate-[5deg]">
+              XP
+            </div>
+            <Trophy size={24} className="text-white drop-shadow-md" />
+            <span className="text-black font-black text-lg leading-none mt-1">{score}</span>
           </div>
         </div>
 
-        <div className="space-y-6">
-          {/* Integrity (Health) */}
-          <div>
-            <div className="flex justify-between text-[10px] text-gray-400 mb-2 uppercase">
-              <span className="flex items-center gap-1">
-                <Heart size={10} className="text-red-500" /> Integrity
-              </span>
-              <span className={integrity < 30 ? "text-red-500 animate-pulse" : "text-[#00ff41]"}>
-                {integrity}%
-              </span>
-            </div>
-            <div className="h-2 bg-gray-900 rounded-full border border-white/5 overflow-hidden">
-              <div
-                className={`h-full transition-all duration-500 ${
-                  integrity < 30
-                    ? "bg-red-600 shadow-[0_0_10px_#ff0000]"
-                    : "bg-[#00ff41] shadow-[0_0_10px_#00ff41]"
-                }`}
-                style={{ width: `${integrity}%` }}
-              />
-            </div>
-          </div>
-
-          {/* Stats Matrix */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-[#0a0a0a] border border-[#00ff41]/20 p-3 rounded-lg text-center">
-              <Trophy size={14} className="mx-auto mb-1 text-yellow-500" />
-              <span className="text-[8px] text-gray-500 uppercase block">Score</span>
-              <span className="text-sm text-white font-bold">{score}</span>
-            </div>
-            <div className="bg-[#0a0a0a] border border-[#00ff41]/20 p-3 rounded-lg text-center">
-              <Zap size={14} className="mx-auto mb-1 text-blue-400" />
-              <span className="text-[8px] text-gray-500 uppercase block">Fragments</span>
-              <span className="text-sm text-white font-bold">{collectedWords.length}/8</span>
-            </div>
-          </div>
-
-          {/* Collected Poetics */}
-          <div className="bg-[#050505] border border-[#00ff41]/10 rounded-xl p-4 flex flex-col gap-2 h-40 overflow-y-auto custom-scrollbar">
-            <div className="text-[9px] text-[#00ff41]/60 uppercase tracking-widest border-b border-white/5 pb-2 mb-1">
-              Semantic_Buffer
-            </div>
-            {collectedWords.map((w, i) => (
-              <div key={i} className="text-xs text-white/80 animate-in slide-in-from-right-2" dir="rtl">
-                {i + 1}. {w}
-              </div>
-            ))}
-            {collectedWords.length === 0 && (
-              <div className="text-[9px] text-gray-700 italic">No data found...</div>
-            )}
-          </div>
-
-          {/* Controls Hint */}
-          <div className="bg-white/5 p-3 rounded-lg border border-white/5">
-            <div className="flex items-center gap-2 mb-2 text-[#00ff41]/40">
-              <Keyboard size={12} />
-              <span className="text-[8px] uppercase font-bold">Local_Input_Mapping</span>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="text-[9px] text-gray-500 flex justify-between px-2 py-1 bg-black rounded">
-                <span>ARROWS</span>
-                <span>MOVE</span>
-              </div>
-              <div className="text-[9px] text-gray-500 flex justify-between px-2 py-1 bg-black rounded">
-                <span>ENTER</span>
-                <span>START</span>
-              </div>
-            </div>
-          </div>
+        {/* Center: Title Card */}
+        <div className="hidden md:block bg-white border-4 border-black p-2 transform -rotate-1 shadow-[4px_4px_0_#000]">
+          <h1 className="text-3xl font-black text-[#E07000] uppercase tracking-tighter leading-none text-center">
+            Night of the{" "}
+            <span className="text-black block text-sm tracking-widest bg-[#FFCC00]">Mutant Data</span>
+          </h1>
         </div>
 
-        <div className="mt-auto space-y-2">
+        {/* Right: Actions */}
+        <div className="flex gap-3">
+          {/* Slot 3: Fragments */}
+          <div className="inventory-slot w-16 h-16 flex flex-col items-center justify-center relative transform rotate-2 hover:rotate-0 transition-transform">
+            <div className="absolute -bottom-2 -right-2 bg-white border-2 border-black px-1 text-[10px] font-bold rotate-[-5deg]">
+              INK
+            </div>
+            <Scroll size={24} className="text-white" />
+            <span className="text-black font-black text-lg leading-none mt-1">{collectedWords.length}/8</span>
+          </div>
+
+          {/* Action: Restart */}
           <button
             onClick={initGame}
-            className="w-full py-3 bg-[#00ff41] hover:bg-[#2eff0a] text-black font-bold rounded-lg text-xs transition-all shadow-[0_0_15px_rgba(0,255,65,0.3)] flex items-center justify-center gap-2"
+            className="inventory-slot w-16 h-16 flex flex-col items-center justify-center cursor-pointer hover:scale-110 active:scale-95 transition-all bg-gradient-to-br from-red-500 to-red-700"
           >
-            <RefreshCw size={14} /> ری‌استارت کنسول
+            <RefreshCw size={28} className="text-white animate-spin-slow" />
           </button>
-          <div className="flex gap-2">
-            <div className="flex-1 p-2 bg-black border border-white/5 rounded text-[8px] text-gray-600 font-mono flex items-center justify-between">
-              <span>OS_KERNEL: STABLE</span>
-              <div className="w-1.5 h-1.5 rounded-full bg-[#00ff41] animate-pulse" />
-            </div>
-          </div>
         </div>
       </div>
 
-      {/* Right: The Virtual CRT Screen */}
-      <div className="flex-grow relative bg-[#050505] p-4 md:p-8 flex items-center justify-center">
-        <div className="relative w-full max-w-2xl aspect-square border-[16px] border-[#1a1a1a] rounded-xl shadow-[0_0_50px_rgba(0,0,0,1)] overflow-hidden bg-black">
-          {/* Scanlines & Glow Overlay */}
-          <div className="absolute inset-0 z-20  opacity-20 bg-scanlines bg-[size:100%_4px]"></div>
-          <div className="absolute inset-0 z-20  shadow-[inset_0_0_100px_rgba(0,255,65,0.15)]"></div>
-          <div className="absolute inset-0 z-20  bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.6)_100%)]"></div>
+      {/* --- THE COMIC PAGE (MAIN CONTAINER) --- */}
+      <div className="relative w-full max-w-4xl aspect-[4/3] bg-white border-8 border-white shadow-[0_0_50px_rgba(0,0,0,0.8)] flex flex-col md:flex-row gap-4 p-4 overflow-hidden">
+        {/* Background Paper Texture */}
+        <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/notebook.png')] pointer-events-none"></div>
 
-          {/* Game Render Logic */}
+        {/* --- PANEL 1: THE GAME GRID (ACTION SHOT) --- */}
+        <div className="flex-grow relative panel-border bg-[#500050] overflow-hidden group">
+          {/* Panel Label */}
+          <div className="absolute top-0 left-0 bg-[#FFCC00] border-b-2 border-r-2 border-black px-2 py-1 z-30">
+            <span className="text-xs font-bold uppercase tracking-widest">Panel 1: The Maze</span>
+          </div>
+
+          {/* Game State Rendering */}
           {gameState === "idle" ? (
-            <div className="h-full flex flex-col items-center justify-center text-center p-8">
-              <Monitor size={80} className="text-[#00ff41] mb-6 animate-pulse" />
-              <h3 className="text-[#00ff41] font-display text-4xl mb-4">آغاز عملیات</h3>
-              <p className="text-gray-500 text-xs max-w-sm mb-8 uppercase tracking-[0.2em] leading-relaxed">
-                Enter the semantic void. Reconstruct the lost poem by exploring the character maze. Watch for
-                data corruption.
-              </p>
-              <button
-                onClick={initGame}
-                className="px-10 py-4 bg-transparent border-2 border-[#00ff41] text-[#00ff41] font-bold hover:bg-[#00ff41] hover:text-black transition-all group"
-              >
-                [ START_EMULATION ]
-              </button>
+            <div className="h-full flex flex-col items-center justify-center text-center p-8 bg-[#E07000]">
+              <div className="bg-white p-6 border-4 border-black shadow-[8px_8px_0_rgba(0,0,0,0.5)] transform rotate-2">
+                <h2 className="text-5xl font-black mb-2 text-black">EPISODE 1</h2>
+                <p className="font-hand text-xl mb-6 text-gray-800 rotate-[-2deg]">
+                  "Sketch Turner is trapped in the code..."
+                </p>
+                <button
+                  onClick={initGame}
+                  className="bg-black text-white text-2xl px-8 py-3 font-bold hover:bg-[#FFCC00] hover:text-black transition-colors border-2 border-transparent hover:border-black"
+                >
+                  START EPISODE
+                </button>
+              </div>
             </div>
           ) : gameState === "lost" || gameState === "won" ? (
-            <div className="h-full flex flex-col items-center justify-center text-center p-8 z-30 relative">
-              {gameState === "won" ? (
-                <Trophy size={100} className="text-yellow-500 mb-6" />
-              ) : (
-                <ShieldAlert size={100} className="text-red-500 mb-6" />
-              )}
-              <h3
-                className={`font-display text-5xl mb-4 ${
-                  gameState === "won" ? "text-yellow-500" : "text-red-500"
-                }`}
-              >
-                {gameState === "won" ? "ماموریت موفق" : "سیستم فروپاشید"}
-              </h3>
-              <div className="font-mono text-gray-500 text-sm mb-8 space-y-1">
-                <p>TOTAL_SCORE: {score}</p>
-                <p>FRAGMENT_SYNC: {collectedWords.length}/8</p>
+            <div className="h-full flex flex-col items-center justify-center text-center p-8 relative z-40 bg-black/90">
+              {/* Dramatic Text Overlay */}
+              <div className="relative">
+                <h2
+                  className={`text-8xl font-black italic absolute -top-1 -left-1 ${
+                    gameState === "won" ? "text-white" : "text-gray-800"
+                  }`}
+                >
+                  {gameState === "won" ? "VICTORY!" : "DOOMED!"}
+                </h2>
+                <h2
+                  className={`text-8xl font-black italic relative z-10 ${
+                    gameState === "won" ? "text-[#FFCC00]" : "text-red-600"
+                  }`}
+                >
+                  {gameState === "won" ? "VICTORY!" : "DOOMED!"}
+                </h2>
               </div>
-              <button onClick={initGame} className="px-8 py-3 bg-[#00ff41] text-black font-bold rounded">
-                TRY_AGAIN
+
+              <div className="mt-8 bg-white border-4 border-black p-4 transform -rotate-2 max-w-xs">
+                <p className="font-hand text-lg">
+                  {gameState === "won"
+                    ? "Sketch escaped the panel! The narrative is safe."
+                    : "Mortus erased you from existence."}
+                </p>
+              </div>
+
+              <button
+                onClick={initGame}
+                className="mt-8 px-6 py-2 bg-[#E07000] border-2 border-black font-bold text-xl hover:bg-white transition-colors shadow-[4px_4px_0_#000]"
+              >
+                RETRY?
               </button>
             </div>
           ) : (
-            <div className="h-full grid grid-cols-15 grid-rows-15 p-2 bg-[#020402]">
+            // THE GRID ITSELF
+            <div className="h-full w-full grid grid-cols-15 grid-rows-15 p-4 relative">
+              {/* Grid Background Effect */}
+              <div className="absolute inset-0 bg-[radial-gradient(circle,transparent_20%,#000_120%)] pointer-events-none z-10"></div>
+
               {grid.map((row, y) =>
                 row.map((tile, x) => {
                   const isPlayer = player.x === x && player.y === y;
                   return (
                     <div
                       key={`${x}-${y}`}
-                      className={`flex items-center justify-center text-sm md:text-lg transition-all duration-75 relative
-                                            ${isPlayer ? "text-[#00ff41] scale-125 z-10" : ""}
-                                            ${tile.discovered ? "opacity-100" : "opacity-0"}
-                                        `}
+                      className={`flex items-center justify-center text-lg md:text-xl relative transition-all duration-100`}
                     >
-                      {isPlayer ? (
-                        <div className="animate-pulse flex items-center justify-center">
-                          <div className="absolute inset-0 bg-[#00ff41]/20 blur-sm rounded-full"></div>@
-                        </div>
-                      ) : (
-                        <span
-                          className={`
-                                                ${tile.type === "wall" ? "text-gray-700" : ""}
-                                                ${
-                                                  tile.type === "item"
-                                                    ? "text-yellow-400 font-bold drop-shadow-[0_0_5px_#fbbf24]"
-                                                    : ""
-                                                }
-                                                ${tile.type === "enemy" ? "text-red-500 animate-bounce" : ""}
-                                                ${
-                                                  tile.type === "goal"
-                                                    ? "text-blue-500 font-black animate-ping"
-                                                    : ""
-                                                }
-                                                ${tile.type === "floor" ? "text-gray-800" : ""}
-                                             `}
-                        >
-                          {tile.char}
-                        </span>
+                      {/* Floor Tiles as Dots */}
+                      {tile.type === "floor" && tile.discovered && !isPlayer && (
+                        <div className="w-1 h-1 bg-white/20 rounded-full"></div>
                       )}
+
+                      {/* Content */}
+                      <span className={`${getTileStyle(tile, isPlayer)} relative`}>
+                        {isPlayer ? (
+                          <div className="relative">
+                            <span className="absolute -inset-2 bg-white rounded-full blur-sm opacity-50 animate-pulse"></span>
+                            <span className="relative text-2xl">@</span>
+                            {/* Sketch's Fist Pointer */}
+                            <div className="absolute -right-4 -bottom-4 text-white text-[10px] font-bold bg-black px-1 rotate-[-10deg]">
+                              ME
+                            </div>
+                          </div>
+                        ) : (
+                          tile.char
+                        )}
+                      </span>
                     </div>
                   );
                 })
               )}
             </div>
           )}
+        </div>
 
-          {/* HUD Status Bar (In-Screen) */}
-          <div className="absolute bottom-0 left-0 right-0 bg-[#00ff41]/5 border-t border-[#00ff41]/20 p-2 flex justify-between items-center px-4 z-30">
-            <div className="flex items-center gap-3">
-              <Terminal size={12} className="text-[#00ff41]" />
-              <span className="text-[10px] text-[#00ff41]/60 font-mono tracking-tighter">
-                {logs[0] || "READY_TO_PROCEED"}
-              </span>
+        {/* --- PANEL 2: NARRATIVE & LOGS (SIDEBAR) --- */}
+        <div className="w-full md:w-64 flex flex-col gap-4 shrink-0">
+          {/* Narrator Box (Yellow) */}
+          <div className="bg-[#FFCC00] border-4 border-black p-3 shadow-[4px_4px_0_rgba(0,0,0,0.2)] relative">
+            <div className="text-[10px] font-bold uppercase mb-1 border-b-2 border-black pb-1">Narrator</div>
+            <div className="font-hand text-sm leading-tight min-h-[60px]">
+              {logs[0] || "The page is blank. Waiting for input..."}
             </div>
-            <div className="flex gap-2">
-              <span className="text-[9px] text-[#00ff41] font-mono">
-                X:{player.x} Y:{player.y}
+          </div>
+
+          {/* Speech Bubble (Collected Words) */}
+          <div className="flex-grow bg-white border-4 border-black rounded-[20px] rounded-bl-none p-4 relative shadow-[4px_4px_0_rgba(0,0,0,0.2)] flex flex-col">
+            {/* Bubble Tail */}
+            <div className="absolute -bottom-4 -left-[4px] w-0 h-0 border-l-[20px] border-l-black border-b-[20px] border-b-transparent"></div>
+            <div className="absolute -bottom-[10px] left-0 w-0 h-0 border-l-[14px] border-l-white border-b-[14px] border-b-transparent z-10"></div>
+
+            <h3 className="font-black text-xl uppercase border-b-2 border-dashed border-gray-300 pb-2 mb-2">
+              Fragments
+            </h3>
+
+            <div className="flex-grow overflow-y-auto space-y-2 pr-2 custom-scrollbar" dir="rtl">
+              {collectedWords.length === 0 ? (
+                <span className="text-gray-400 text-xs italic text-center block mt-4">
+                  هنوز کلمه‌ای پیدا نشده...
+                </span>
+              ) : (
+                collectedWords.map((w, i) => (
+                  <div
+                    key={i}
+                    className="animate-draw bg-gray-100 px-2 py-1 border border-gray-300 rounded text-sm font-bold text-[#500050]"
+                  >
+                    {w}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Controls Hint (Sticker Style) */}
+          <div className="bg-black text-white p-2 transform rotate-1 text-center border-2 border-white border-dashed">
+            <div className="flex justify-center gap-4 text-xs font-bold uppercase">
+              <span className="flex items-center gap-1">
+                <Keyboard size={12} /> Arrows to Move
               </span>
             </div>
           </div>
         </div>
-
-        {/* Ambient Shadow Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-green-900/5 to-transparent "></div>
       </div>
+
+      {/* --- FLOATING ONOMATOPOEIA (Visual FX) --- */}
+      {gameState === "playing" && (
+        <div className="absolute bottom-4 right-4 pointer-events-none opacity-50">
+          <span className="text-6xl font-black text-white drop-shadow-[4px_4px_0_#000] rotate-[-15deg] block">
+            POW!
+          </span>
+        </div>
+      )}
     </div>
   );
 };

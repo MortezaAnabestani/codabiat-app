@@ -52,7 +52,7 @@ const MortusDrawer: React.FC<{ text: string; onComplete?: () => void }> = ({ tex
       {/* The Hand Sprite Animation */}
       {isDrawing && (
         <div
-          className="absolute z-50 pointer-events-none transition-all duration-75"
+          className="absolute z-50  transition-all duration-75"
           style={{
             left: "100%", // Simplified: In a real engine, we'd calculate X/Y coordinates of the last char
             bottom: "-10px",
@@ -102,7 +102,7 @@ const ComicPanel: React.FC<{ msg: Message; isLast: boolean }> = ({ msg, isLast }
     <div className={`relative mb-12 flex ${isUser ? "justify-end" : "justify-start"} group`}>
       {/* Background Onomatopoeia (Visual Depth) */}
       {!isUser && isLast && (
-        <div className="absolute -top-6 -left-4 text-6xl font-black text-red-600 opacity-20 rotate-12 select-none pointer-events-none font-comic z-0">
+        <div className="absolute -top-6 -left-4 text-6xl font-black text-red-600 opacity-20 rotate-12 select-none  font-comic z-0">
           KRACK!
         </div>
       )}
@@ -229,7 +229,7 @@ export const InteractiveFictionModule: React.FC = () => {
     <div className="flex flex-col h-screen w-full overflow-hidden bg-[#1a1a1a] font-sans relative">
       {/* --- BACKGROUND: THE ARTIST'S DESK --- */}
       <div
-        className="absolute inset-0 z-0 opacity-30 pointer-events-none"
+        className="absolute inset-0 z-0 opacity-30 "
         style={{
           backgroundImage: `radial-gradient(#333 1px, transparent 1px)`,
           backgroundSize: "20px 20px",

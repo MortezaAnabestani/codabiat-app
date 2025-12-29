@@ -4,9 +4,9 @@ import GlitchHeader from "../components/GlitchHeader";
 
 const LabPage: React.FC = () => {
   return (
-    <div className="pt-20 px-6 md:px-32 min-h-screen flex flex-col items-center relative z-10 ">
+    <div className="pt-20  px-6 md:px-32 min-h-screen flex flex-col items-center relative z-10 ">
       <div className="mb-8 text-center pointer-events-auto">
-        <GlitchHeader text="آزمایشگاه کُدَبی" subtext="CODABIAT_LAB" />
+        <GlitchHeader text="آزمایشگاه کُدَبیات" subtext="CODABIAT_LAB" />
       </div>
       <Lab />
     </div>

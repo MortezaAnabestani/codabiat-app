@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
-import { Box, Circle, Activity, Settings, Maximize, RefreshCw } from "lucide-react";
+import { Box, Circle, Activity, Settings, Maximize, RefreshCw, Zap, Hand } from "lucide-react";
 
 type ShapeType = "sphere" | "cube" | "torus" | "icosa";
 
@@ -25,8 +25,9 @@ export const TextOrbModule: React.FC = () => {
 
     const scene = new THREE.Scene();
     sceneRef.current = scene;
-    scene.background = new THREE.Color(0x020202);
-    scene.fog = new THREE.FogExp2(0x020202, 0.02);
+    // تغییر رنگ پس‌زمینه به "Bruised Purple" خیلی تیره برای القای حس "Void" (میز طراح)
+    scene.background = new THREE.Color(0x1a051a);
+    scene.fog = new THREE.FogExp2(0x1a051a, 0.02);
 
     const camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000);
     camera.position.z = 18;
@@ -44,11 +45,12 @@ export const TextOrbModule: React.FC = () => {
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     scene.add(ambientLight);
 
-    const pointLight1 = new THREE.PointLight(0xff00ff, 2, 50);
+    // نورها را کمی به سمت رنگ‌های پالت سگا (نارنجی/سبز) متمایل می‌کنیم
+    const pointLight1 = new THREE.PointLight(0xe07000, 2, 50); // Mutant Orange
     pointLight1.position.set(5, 5, 5);
     scene.add(pointLight1);
 
-    const pointLight2 = new THREE.PointLight(0x00ffff, 2, 50);
+    const pointLight2 = new THREE.PointLight(0x006000, 2, 50); // Sewer Sludge
     pointLight2.position.set(-5, -5, 5);
     scene.add(pointLight2);
 
@@ -63,10 +65,10 @@ export const TextOrbModule: React.FC = () => {
 
     particlesGeometry.setAttribute("position", new THREE.BufferAttribute(posArray, 3));
     const particlesMaterial = new THREE.PointsMaterial({
-      size: 0.1,
-      color: 0x888888,
+      size: 0.15, // کمی بزرگتر برای استایل پیکسلی
+      color: 0xffffff, // Sketch White
       transparent: true,
-      opacity: 0.8,
+      opacity: 0.6,
     });
     const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
     particlesRef.current = particlesMesh;
@@ -147,10 +149,11 @@ export const TextOrbModule: React.FC = () => {
     canvas.height = 1024;
     const ctx = canvas.getContext("2d");
     if (ctx) {
+      // Ink Black Background
       ctx.fillStyle = "#000000";
       ctx.fillRect(0, 0, 1024, 1024);
 
-      ctx.font = 'bold 60px "Vazirmatn"';
+      ctx.font = 'bold 60px "Courier New", monospace'; // فونت مونو برای حس کمیک قدیمی
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
 
@@ -158,13 +161,15 @@ export const TextOrbModule: React.FC = () => {
       const rows = 16;
       for (let i = 0; i < cols; i++) {
         for (let j = 0; j < rows; j++) {
-          ctx.fillStyle = (i + j) % 2 === 0 ? "#ff8800" : "#00ffff";
+          // رنگ‌های پالت سگا برای تکسچر
+          ctx.fillStyle = (i + j) % 2 === 0 ? "#E07000" : "#FFFFFF";
           ctx.fillText(text, (i / cols) * 1024 + 64, (j / rows) * 1024 + 32);
         }
       }
 
-      ctx.strokeStyle = "#333";
-      ctx.lineWidth = 2;
+      // خطوط ضخیم جوهری
+      ctx.strokeStyle = "#FFFFFF";
+      ctx.lineWidth = 4;
       ctx.beginPath();
       for (let i = 0; i < 1024; i += 128) {
         ctx.moveTo(i, 0);
@@ -178,6 +183,9 @@ export const TextOrbModule: React.FC = () => {
     const texture = new THREE.CanvasTexture(canvas);
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
+    // فیلتر Nearest برای ظاهر پیکسلی
+    texture.magFilter = THREE.NearestFilter;
+    texture.minFilter = THREE.NearestFilter;
 
     let geometry;
     switch (shape) {
@@ -197,7 +205,7 @@ export const TextOrbModule: React.FC = () => {
     }
 
     const solidMaterial = new THREE.MeshBasicMaterial({
-      color: 0x000000,
+      color: 0x000000, // Ink Black core
       polygonOffset: true,
       polygonOffsetFactor: 1,
       polygonOffsetUnits: 1,
@@ -208,98 +216,154 @@ export const TextOrbModule: React.FC = () => {
     const textureMaterial = new THREE.MeshBasicMaterial({
       map: texture,
       transparent: true,
-      opacity: 0.9,
+      opacity: 1, // شفافیت کمتر برای ظاهر کمیک بوکی
       side: THREE.DoubleSide,
-      blending: THREE.AdditiveBlending,
+      blending: THREE.NormalBlending, // بلندینگ نرمال برای وضوح بیشتر
     });
     const texMesh = new THREE.Mesh(geometry, textureMaterial);
     meshGroupRef.current.add(texMesh);
 
     const wireframeGeom = new THREE.WireframeGeometry(geometry);
-    const wireframeMat = new THREE.LineBasicMaterial({ color: 0x00aaff, opacity: 0.3, transparent: true });
+    // خطوط دور مشکی ضخیم (Outline)
+    const wireframeMat = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 });
     const wireframe = new THREE.LineSegments(wireframeGeom, wireframeMat);
-    wireframe.scale.setScalar(1.02);
+    wireframe.scale.setScalar(1.01);
     meshGroupRef.current.add(wireframe);
   }, [text, shape]);
 
   return (
-    <div className="h-full flex flex-col relative overflow-hidden bg-black">
-      <div className="absolute top-4 left-4 z-20 w-80 bg-black/80 border border-orange-500/30 p-4 rounded-lg backdrop-blur shadow-2xl animate-in slide-in-from-left duration-500">
-        <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-4">
-          <h3 className="text-orange-400 font-display text-sm flex items-center gap-2">
-            <Activity size={16} /> اشکال سه‌بعدی
-          </h3>
-          <Settings size={14} className="text-gray-500" />
-        </div>
-
-        <div className="space-y-4">
-          <div>
-            <label className="text-[10px] text-gray-500 font-mono mb-1 block">TEXTURE_STRING</label>
-            <input
-              type="text"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 p-2 text-orange-100 text-xs rounded outline-none focus:border-orange-500 transition-colors"
-              dir="rtl"
-            />
+    // کانتینر اصلی: "The Void" - میز طراح
+    <div className="h-full flex flex-col relative overflow-hidden bg-[#1a051a]">
+      {/* پنل کنترل: طراحی شده شبیه به یک پنل کمیک یا منوی اینونتوری سگا */}
+      <div className="absolute top-6 left-6 z-20 w-80 animate-in slide-in-from-left duration-500">
+        {/* سایه سخت (Hard Shadow) برای عمق دادن */}
+        <div className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative">
+          {/* هدر پنل: Narrator Box Style */}
+          <div className="bg-[#FFCC00] border-b-4 border-black p-3 flex items-center justify-between">
+            <h3 className="text-black font-mono font-black text-sm uppercase tracking-widest flex items-center gap-2">
+              <Activity size={20} className="stroke-[3]" />
+              INVENTORY: SHAPES
+            </h3>
+            <Settings size={18} className="text-black stroke-[3]" />
           </div>
 
-          <div>
-            <label className="text-[10px] text-gray-500 font-mono mb-2 block">GEOMETRY_TYPE</label>
-            <div className="grid grid-cols-4 gap-2">
-              {[
-                { id: "sphere", icon: Circle, label: "کره" },
-                { id: "cube", icon: Box, label: "مکعب" },
-                { id: "torus", icon: RefreshCw, label: "گره" },
-                { id: "icosa", icon: Maximize, label: "چندوجهی" },
-              ].map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => setShape(item.id as ShapeType)}
-                  className={`flex flex-col items-center justify-center p-2 rounded border transition-all ${
-                    shape === item.id
-                      ? "bg-orange-500/20 border-orange-500 text-orange-400"
-                      : "bg-transparent border-white/10 text-gray-500 hover:bg-white/5"
-                  }`}
-                >
-                  <item.icon size={16} className="mb-1" />
-                </button>
-              ))}
+          <div className="p-4 space-y-5">
+            {/* ورودی متن: Speech Bubble Style */}
+            <div>
+              <label className="text-[10px] text-black font-mono font-bold mb-1 block uppercase tracking-wider">
+                DIALOGUE INPUT
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  className="w-full bg-white border-2 border-black p-2 text-black font-mono text-xs outline-none focus:bg-yellow-50 transition-colors placeholder:text-gray-400"
+                  dir="rtl"
+                />
+                {/* آیکون دست کوچک برای نشان دادن ورودی */}
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 text-black">
+                  <span className="text-[10px] font-black">✎</span>
+                </div>
+              </div>
+            </div>
+
+            {/* انتخاب شکل: Item Slots Style */}
+            <div>
+              <label className="text-[10px] text-black font-mono font-bold mb-2 block uppercase tracking-wider">
+                SELECT ITEM
+              </label>
+              <div className="grid grid-cols-4 gap-2">
+                {[
+                  { id: "sphere", icon: Circle, label: "کره" },
+                  { id: "cube", icon: Box, label: "مکعب" },
+                  { id: "torus", icon: RefreshCw, label: "گره" },
+                  { id: "icosa", icon: Maximize, label: "چندوجهی" },
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => setShape(item.id as ShapeType)}
+                    className={`group relative flex flex-col items-center justify-center p-2 border-2 border-black transition-all active:translate-y-1 active:shadow-none ${
+                      shape === item.id
+                        ? "bg-[#E07000] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]" // Mutant Orange Active
+                        : "bg-white hover:bg-yellow-100 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+                    }`}
+                  >
+                    <item.icon
+                      size={20}
+                      className={`mb-1 stroke-[2.5] ${shape === item.id ? "text-white" : "text-black"}`}
+                    />
+                    {/* افکت هاور: مشت Sketch Turner */}
+                    {shape !== item.id && (
+                      <div className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black text-white text-[8px] px-1 font-bold">
+                        PICK!
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* اسلایدر سرعت */}
+            <div>
+              <div className="flex justify-between mb-1">
+                <label className="text-[10px] text-black font-mono font-bold uppercase">ROTATION_SPEED</label>
+                <span className="text-[10px] text-[#E07000] font-mono font-black bg-black px-1">
+                  {(speed * 100).toFixed(0)}%
+                </span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="2"
+                step="0.1"
+                value={speed}
+                onChange={(e) => setSpeed(Number(e.target.value))}
+                className="w-full h-4 bg-gray-200 border-2 border-black appearance-none cursor-pointer accent-[#E07000]"
+                style={{
+                  backgroundImage: `linear-gradient(to right, #000 1px, transparent 1px)`,
+                  backgroundSize: `10px 100%`,
+                }}
+              />
+            </div>
+
+            {/* دکمه اکشن: Action Button Style */}
+            <div className="pt-2">
+              <button
+                onClick={() => setAutoRotate(!autoRotate)}
+                className={`w-full py-3 text-xs font-black font-mono border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all flex items-center justify-center gap-2 uppercase ${
+                  autoRotate
+                    ? "bg-[#006000] text-white" // Sewer Sludge (ON)
+                    : "bg-[#500050] text-white" // Bruised Purple (OFF)
+                }`}
+              >
+                {autoRotate ? <RefreshCw size={14} className="animate-spin" /> : <Hand size={14} />}
+                {autoRotate ? "AUTO_ROTATE: ENGAGED" : "AUTO_ROTATE: HALTED"}
+              </button>
             </div>
           </div>
-
-          <div>
-            <div className="flex justify-between mb-1">
-              <label className="text-[10px] text-gray-500 font-mono">ROTATION_SPEED</label>
-              <span className="text-[10px] text-orange-400 font-mono">{(speed * 100).toFixed(0)}%</span>
-            </div>
-            <input
-              type="range"
-              min="0"
-              max="2"
-              step="0.1"
-              value={speed}
-              onChange={(e) => setSpeed(Number(e.target.value))}
-              className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-orange-500"
-            />
-          </div>
-
-          <div className="flex items-center gap-2 pt-2">
-            <button
-              onClick={() => setAutoRotate(!autoRotate)}
-              className={`flex-1 py-2 text-xs font-bold rounded border transition-colors ${
-                autoRotate
-                  ? "bg-green-900/20 border-green-500/50 text-green-400"
-                  : "bg-red-900/20 border-red-500/50 text-red-400"
-              }`}
-            >
-              {autoRotate ? "AUTO_ROTATE: ON" : "AUTO_ROTATE: OFF"}
-            </button>
-          </div>
         </div>
+
+        {/* المان تزئینی: پاره شدن کاغذ در پایین پنل */}
+        <div
+          className="w-full h-4 bg-black mt-1"
+          style={{
+            clipPath:
+              "polygon(0 0, 100% 0, 95% 100%, 85% 10%, 75% 100%, 65% 10%, 55% 100%, 45% 10%, 35% 100%, 25% 10%, 15% 100%, 5% 10%)",
+          }}
+        ></div>
       </div>
-      <div ref={mountRef} className="w-full h-full cursor-move" />
-      <div className="absolute inset-0  bg-gradient-to-t from-orange-900/10 to-transparent"></div>
+
+      {/* ناحیه رندر Three.js */}
+      <div ref={mountRef} className="w-full h-full cursor-move relative z-10" />
+
+      {/* افکت وینیت (Vignette) برای تمرکز روی مرکز */}
+      <div className="absolute inset-0  bg-[radial-gradient(circle_at_center,transparent_20%,#000000_100%)] opacity-60 z-10"></div>
+
+      {/* متن‌های شناور پس‌زمینه (Onomatopoeia) */}
+      <div className="absolute bottom-10 right-10 font-black text-6xl text-white/5 rotate-[-10deg]  select-none font-mono z-0">
+        DATA...
+      </div>
     </div>
   );
 };

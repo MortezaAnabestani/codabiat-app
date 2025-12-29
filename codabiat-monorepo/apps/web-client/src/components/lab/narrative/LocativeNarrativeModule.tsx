@@ -130,7 +130,7 @@ export const LocativeNarrativeModule: React.FC = () => {
   return (
     <div className="flex flex-col h-full overflow-hidden relative bg-[#500050] font-mono">
       {/* --- THE VOID BACKGROUND (Artist's Desk) --- */}
-      <div className="absolute inset-0 opacity-10 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+      <div className="absolute inset-0 opacity-10  bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
 
       {/* --- HEADER: INVENTORY SLOTS --- */}
       <div className="flex items-center justify-between p-4 z-20 shrink-0 bg-[#202020] border-b-4 border-black shadow-lg">
@@ -179,7 +179,7 @@ export const LocativeNarrativeModule: React.FC = () => {
 
             {/* Scanning Visuals */}
             {scanning && (
-              <div className="absolute inset-0 z-[400] flex items-center justify-center pointer-events-none">
+              <div className="absolute inset-0 z-[400] flex items-center justify-center ">
                 <div
                   className="absolute text-6xl font-black text-[#E07000] animate-ping opacity-50"
                   style={{ textShadow: "4px 4px 0 #000" }}
@@ -278,7 +278,7 @@ export const LocativeNarrativeModule: React.FC = () => {
 
       {/* --- INSTRUCTIONS (Floating Text) --- */}
       {nodes.length === 0 && !loading && (
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[400] pointer-events-none">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[400] ">
           <div className="bg-white border-4 border-black p-4 transform rotate-3 shadow-[8px_8px_0_rgba(0,0,0,0.8)] text-center">
             <h1 className="text-4xl font-black text-[#E07000] drop-shadow-[2px_2px_0_#000] mb-2">ACTION!</h1>
             <p className="font-bold text-black text-sm bg-[#FFCC00] px-2 inline-block">

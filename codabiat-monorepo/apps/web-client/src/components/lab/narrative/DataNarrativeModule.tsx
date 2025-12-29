@@ -135,7 +135,7 @@ const NeuralRadar: React.FC<{ data: DataChannel[] }> = ({ data }) => {
     <div className="relative w-full aspect-square max-w-[300px] mx-auto bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center overflow-hidden transform -rotate-1">
       <canvas ref={canvasRef} width={400} height={400} className="w-full h-full" />
       {/* Halftone Overlay */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle,rgba(0,0,0,0.1)_1px,transparent_1px)] bg-[length:4px_4px] pointer-events-none"></div>
+      <div className="absolute inset-0 bg-[radial-gradient(circle,rgba(0,0,0,0.1)_1px,transparent_1px)] bg-[length:4px_4px] "></div>
       <div className="absolute top-0 left-0 bg-yellow-400 text-black text-[10px] font-black px-2 py-1 border-b-2 border-r-2 border-black">
         RADAR_VDP
       </div>
@@ -206,7 +206,7 @@ export const DataNarrativeModule: React.FC = () => {
     <div className="h-full flex flex-col bg-[#202020] p-4 md:p-6 overflow-hidden font-mono relative">
       {/* Background Texture: Scattered Pencils/Erasers (Abstracted via CSS gradients) */}
       <div
-        className="absolute inset-0 opacity-10 pointer-events-none"
+        className="absolute inset-0 opacity-10 "
         style={{
           backgroundImage: "radial-gradient(#505050 1px, transparent 1px)",
           backgroundSize: "20px 20px",

@@ -12,21 +12,23 @@ import {
   Activity,
   Zap,
   Layers,
+  X,
 } from "lucide-react";
 
+// --- TYPES ---
 interface Node extends d3.SimulationNodeDatum {
   id: string;
   group: "tech" | "lit" | "theory" | "core";
   value: number;
 }
 
-// Fixed: Explicitly add source and target to the Link interface to avoid "property does not exist" errors
 interface Link extends d3.SimulationLinkDatum<Node> {
   source: string | Node;
   target: string | Node;
   strength: number;
 }
 
+// --- DATA ---
 const initialData: { nodes: Node[]; links: Link[] } = {
   nodes: [
     { id: "ادبیات دیجیتال", group: "core", value: 40 },
@@ -62,6 +64,17 @@ const initialData: { nodes: Node[]; links: Link[] } = {
   ],
 };
 
+// --- COMIX ZONE PALETTE ---
+const PALETTE = {
+  orange: "#E07000", // Mutant Orange
+  green: "#006000", // Sewer Sludge
+  purple: "#500050", // Bruised Purple
+  yellow: "#FFCC00", // Narrator Box
+  white: "#FFFFFF", // Sketch White
+  black: "#000000", // Ink Black
+  void: "#1a1a1a", // Artist Desk
+};
+
 export const SemanticClusterModule: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -78,6 +91,33 @@ export const SemanticClusterModule: React.FC = () => {
     const svg = d3.select(svgRef.current).attr("viewBox", [0, 0, width, height]);
 
     svg.selectAll("*").remove();
+
+    // --- SEGA STYLE FILTERS (Rough Ink) ---
+    const defs = svg.append("defs");
+
+    // Filter for "Hand Drawn" jitter
+    const roughFilter = defs.append("filter").attr("id", "roughPaper");
+    roughFilter
+      .append("feTurbulence")
+      .attr("type", "fractalNoise")
+      .attr("baseFrequency", "0.04")
+      .attr("numOctaves", "5")
+      .attr("result", "noise");
+    roughFilter
+      .append("feDisplacementMap")
+      .attr("in", "SourceGraphic")
+      .attr("in2", "noise")
+      .attr("scale", "3");
+
+    // Filter for "Ink Blot" shadow
+    const dropShadow = defs.append("filter").attr("id", "inkShadow");
+    dropShadow.append("feGaussianBlur").attr("in", "SourceAlpha").attr("stdDeviation", 2);
+    dropShadow.append("feOffset").attr("dx", 3).attr("dy", 3).attr("result", "offsetblur");
+    dropShadow.append("feFlood").attr("flood-color", "#000000");
+    dropShadow.append("feComposite").attr("in2", "offsetblur").attr("operator", "in");
+    const merge = dropShadow.append("feMerge");
+    merge.append("feMergeNode");
+    merge.append("feMergeNode").attr("in", "SourceGraphic");
 
     const g = svg.append("g");
 
@@ -102,25 +142,26 @@ export const SemanticClusterModule: React.FC = () => {
           .id((d) => d.id)
           .distance(150)
       )
-      .force("charge", d3.forceManyBody().strength(-400))
+      .force("charge", d3.forceManyBody().strength(-500))
       .force("center", d3.forceCenter(width / 2, height / 2))
       .force(
         "collision",
-        d3.forceCollide().radius((d) => (d as Node).value + 20)
+        d3.forceCollide().radius((d) => (d as Node).value + 30)
       );
 
-    // --- Draw Links ---
+    // --- Draw Links (Sketchy Lines) ---
     const link = g
       .append("g")
-      .attr("stroke", "#1e293b")
-      .attr("stroke-opacity", 0.6)
+      .attr("stroke", PALETTE.black)
+      .attr("stroke-opacity", 1)
       .selectAll("line")
       .data(initialData.links)
       .join("line")
-      .attr("stroke-width", (d) => Math.sqrt(d.strength) * 3)
+      .attr("stroke-width", (d) => Math.sqrt(d.strength) * 4) // Thicker ink lines
+      .attr("filter", "url(#roughPaper)") // Apply jitter
       .attr("class", "transition-all duration-300");
 
-    // --- Draw Nodes ---
+    // --- Draw Nodes (Ink Blots/Paper Cutouts) ---
     const node = g
       .append("g")
       .selectAll("g")
@@ -133,54 +174,49 @@ export const SemanticClusterModule: React.FC = () => {
         highlightConnections(d);
       });
 
-    // Node Glow Effect
+    // Node Shape (Rough Circle with thick border)
     node
       .append("circle")
-      .attr("r", (d) => d.value)
+      .attr("r", (d) => d.value + 5)
       .attr("fill", (d) => {
-        if (d.group === "core") return "#39ff14";
-        if (d.group === "tech") return "#00ffff";
-        if (d.group === "lit") return "#ff00ff";
-        return "#eab308";
+        if (d.group === "core") return PALETTE.orange;
+        if (d.group === "tech") return PALETTE.green;
+        if (d.group === "lit") return PALETTE.purple;
+        return PALETTE.yellow;
       })
-      .attr("filter", "url(#glow)")
-      .attr("class", "transition-transform group-hover:scale-110 duration-300 shadow-xl");
+      .attr("stroke", PALETTE.black)
+      .attr("stroke-width", 3)
+      .attr("filter", "url(#roughPaper)") // Jittery edges
+      .attr("class", "transition-transform group-hover:scale-110 duration-100");
 
-    // Node Labels
+    // Node Labels (Pixel Font)
     node
       .append("text")
       .text((d) => d.id)
       .attr("text-anchor", "middle")
-      .attr("dy", (d) => d.value + 15)
-      .attr("fill", "#94a3b8")
-      .attr("font-size", "12px")
-      .attr("font-family", "Vazirmatn")
-      .attr("class", " group-hover:fill-white font-bold transition-colors");
-
-    // --- Definition of Effects ---
-    const defs = svg.append("defs");
-    const filter = defs.append("filter").attr("id", "glow");
-    filter.append("feGaussianBlur").attr("stdDeviation", "3.5").attr("result", "coloredBlur");
-    const feMerge = filter.append("feMerge");
-    feMerge.append("feMergeNode").attr("in", "coloredBlur");
-    feMerge.append("feMergeNode").attr("in", "SourceGraphic");
+      .attr("dy", (d) => d.value + 25)
+      .attr("fill", PALETTE.black)
+      .attr("font-size", "14px")
+      .attr("font-family", "'Courier New', monospace") // Fallback to typewriter style
+      .attr("font-weight", "bold")
+      .style("text-shadow", "2px 2px 0px #FFFFFF") // White outline for readability
+      .attr("class", "pointer-events-none uppercase tracking-tighter");
 
     // --- Highlight Logic ---
     function highlightConnections(d: Node) {
       const neighbors = new Set();
       initialData.links.forEach((l) => {
-        // Fixed: source and target might be strings or Node objects, cast to any to access id
         if ((l.source as any).id === d.id) neighbors.add((l.target as any).id);
         if ((l.target as any).id === d.id) neighbors.add((l.source as any).id);
       });
 
-      node.style("opacity", (n) => (n.id === d.id || neighbors.has(n.id) ? 1 : 0.2));
+      node.style("opacity", (n) => (n.id === d.id || neighbors.has(n.id) ? 1 : 0.3));
       link
         .style("stroke", (l) =>
-          (l.source as any).id === d.id || (l.target as any).id === d.id ? "#39ff14" : "#1e293b"
+          (l.source as any).id === d.id || (l.target as any).id === d.id ? PALETTE.orange : PALETTE.black
         )
-        .style("stroke-opacity", (l) =>
-          (l.source as any).id === d.id || (l.target as any).id === d.id ? 1 : 0.1
+        .style("stroke-width", (l) =>
+          (l.source as any).id === d.id || (l.target as any).id === d.id ? 6 : 2
         );
     }
 
@@ -217,166 +253,214 @@ export const SemanticClusterModule: React.FC = () => {
   }, []);
 
   return (
-    <div className="h-full flex flex-col relative bg-[#050505] overflow-hidden group">
-      {/* HUD / Header */}
-      <div className="absolute top-4 left-4 right-4 z-20 flex justify-between items-start ">
-        <div className="flex flex-col gap-2 pointer-events-auto">
-          <div className="bg-black/80 backdrop-blur-md border border-teal-500/30 p-4 rounded-xl shadow-2xl">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-teal-500/10 rounded-lg text-teal-400">
-                <Network size={20} />
+    // MAIN CONTAINER: The "Void" / Artist's Desk
+    <div className="h-full flex flex-col relative bg-[#2a2a2a] overflow-hidden font-mono select-none">
+      {/* BACKGROUND TEXTURE: Scattered Pencils/Paper (Simulated via CSS patterns) */}
+      <div
+        className="absolute inset-0 opacity-10 pointer-events-none"
+        style={{ backgroundImage: "radial-gradient(#555 1px, transparent 1px)", backgroundSize: "20px 20px" }}
+      ></div>
+
+      {/* --- HUD / INVENTORY HEADER --- */}
+      <div className="absolute top-0 left-0 right-0 z-20 p-4 flex justify-between items-start pointer-events-none">
+        {/* LEFT: Title Card (Narrator Box Style) */}
+        <div className="pointer-events-auto transform -rotate-1">
+          <div className="bg-[#FFCC00] border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-3 max-w-xs">
+            <div className="flex items-center gap-3 border-b-2 border-black pb-2 mb-2">
+              <div className="bg-black text-white p-1">
+                <Network size={24} />
               </div>
               <div>
-                <h2 className="text-teal-400 font-display text-xl">خوشه‌بندی عصبی</h2>
-                <p className="text-[9px] font-mono text-gray-500 uppercase tracking-widest">
-                  Semantic_Topology_v8.4
-                </p>
+                <h2 className="text-black font-black text-xl uppercase tracking-tighter leading-none">
+                  خوشه‌بندی عصبی
+                </h2>
+                <p className="text-xs font-bold text-[#E07000] uppercase">EPISODE 1: TOPOLOGY</p>
               </div>
             </div>
 
-            <div className="relative mb-4">
-              <Search size={14} className="absolute left-3 top-2.5 text-gray-500" />
+            {/* Search Input (Sketch Style) */}
+            <div className="relative">
+              <Search size={16} className="absolute left-2 top-2.5 text-black" />
               <input
                 type="text"
-                placeholder="جستجو در شبکه..."
+                placeholder="جستجو..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-lg py-2 pl-9 pr-4 text-xs text-white outline-none focus:border-teal-500 transition-all font-sans"
+                className="w-full bg-white border-2 border-black border-dashed py-1 pl-8 pr-2 text-sm text-black placeholder-gray-500 outline-none focus:bg-[#E07000] focus:text-white transition-colors font-bold"
                 dir="rtl"
               />
             </div>
-
-            <div className="flex gap-2 text-[10px] font-mono text-gray-400">
-              <div className="flex items-center gap-1">
-                <Layers size={12} /> NODES: {initialData.nodes.length}
-              </div>
-              <div className="flex items-center gap-1 border-r border-white/10 pl-2 ml-2">
-                <Zap size={12} /> LINKS: {initialData.links.length}
-              </div>
-            </div>
           </div>
         </div>
 
-        <div className="flex flex-col gap-2 pointer-events-auto items-end">
-          <div className="bg-black/80 backdrop-blur-md border border-white/10 p-2 rounded-lg flex flex-col gap-2">
-            <button className="p-2 hover:bg-white/10 text-gray-400 hover:text-white transition-colors">
-              <Maximize2 size={16} />
+        {/* RIGHT: Inventory Slots (Controls) */}
+        <div className="flex flex-col gap-4 pointer-events-auto">
+          {/* Slot Group 1: Stats */}
+          <div className="flex gap-2">
+            <div className="w-12 h-12 bg-black border-2 border-gray-600 flex flex-col items-center justify-center relative group">
+              <Layers size={16} className="text-[#FFCC00] mb-1" />
+              <span className="text-[#FFCC00] text-[10px] font-bold">{initialData.nodes.length}</span>
+              <div className="absolute -bottom-6 bg-white text-black text-[10px] px-1 border border-black opacity-0 group-hover:opacity-100 transition-opacity">
+                NODES
+              </div>
+            </div>
+            <div className="w-12 h-12 bg-black border-2 border-gray-600 flex flex-col items-center justify-center relative group">
+              <Zap size={16} className="text-[#E07000] mb-1" />
+              <span className="text-[#E07000] text-[10px] font-bold">{initialData.links.length}</span>
+              <div className="absolute -bottom-6 bg-white text-black text-[10px] px-1 border border-black opacity-0 group-hover:opacity-100 transition-opacity">
+                LINKS
+              </div>
+            </div>
+          </div>
+
+          {/* Slot Group 2: Actions */}
+          <div className="flex gap-2 justify-end">
+            <button className="w-10 h-10 bg-[#FFCC00] border-2 border-black shadow-[2px_2px_0px_0px_#000] hover:translate-y-1 hover:shadow-none transition-all flex items-center justify-center text-black">
+              <Maximize2 size={18} />
             </button>
-            <button className="p-2 hover:bg-white/10 text-gray-400 hover:text-white transition-colors">
-              <ZoomIn size={16} />
+            <button className="w-10 h-10 bg-white border-2 border-black shadow-[2px_2px_0px_0px_#000] hover:translate-y-1 hover:shadow-none transition-all flex items-center justify-center text-black">
+              <ZoomIn size={18} />
             </button>
-            <button className="p-2 hover:bg-white/10 text-gray-400 hover:text-white transition-colors">
-              <ZoomOut size={16} />
+            <button className="w-10 h-10 bg-white border-2 border-black shadow-[2px_2px_0px_0px_#000] hover:translate-y-1 hover:shadow-none transition-all flex items-center justify-center text-black">
+              <ZoomOut size={18} />
             </button>
           </div>
 
-          <div className="bg-black/80 backdrop-blur-md border border-white/10 p-3 rounded-lg text-right">
-            <p className="text-[9px] font-mono text-gray-500 uppercase mb-2">Legend</p>
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-end gap-2 text-[10px]">
-                <span className="text-gray-400">هسته اصلی</span>
-                <div className="w-2 h-2 rounded-full bg-[#39ff14]"></div>
+          {/* Legend (Comic Strip Style) */}
+          <div className="bg-white border-4 border-black p-2 transform rotate-1 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+            <p className="text-[10px] font-black bg-black text-white px-1 mb-2 inline-block">GUIDE</p>
+            <div className="space-y-1">
+              <div className="flex items-center justify-end gap-2 text-[10px] font-bold">
+                <span className="text-black">هسته</span>
+                <div className="w-3 h-3 border border-black bg-[#E07000]"></div>
               </div>
-              <div className="flex items-center justify-end gap-2 text-[10px]">
-                <span className="text-gray-400">تکنولوژی</span>
-                <div className="w-2 h-2 rounded-full bg-[#00ffff]"></div>
+              <div className="flex items-center justify-end gap-2 text-[10px] font-bold">
+                <span className="text-black">تکنولوژی</span>
+                <div className="w-3 h-3 border border-black bg-[#006000]"></div>
               </div>
-              <div className="flex items-center justify-end gap-2 text-[10px]">
-                <span className="text-gray-400">ادبیات</span>
-                <div className="w-2 h-2 rounded-full bg-[#ff00ff]"></div>
+              <div className="flex items-center justify-end gap-2 text-[10px] font-bold">
+                <span className="text-black">ادبیات</span>
+                <div className="w-3 h-3 border border-black bg-[#500050]"></div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Canvas Area */}
-      <div ref={containerRef} className="w-full h-full relative z-0 cursor-grab active:cursor-grabbing">
+      {/* --- MAIN CANVAS (The Page) --- */}
+      <div
+        ref={containerRef}
+        className="w-full h-full relative z-0 cursor-grab active:cursor-grabbing bg-[#f0f0f0]"
+      >
+        {/* Paper Texture Overlay */}
+        <div
+          className="absolute inset-0 opacity-20 pointer-events-none mix-blend-multiply"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.5'/%3E%3C/svg%3E")`,
+          }}
+        ></div>
         <svg ref={svgRef} className="w-full h-full" />
       </div>
 
-      {/* Analysis Panel (Slide-in) */}
+      {/* --- ANALYSIS PANEL (Comic Panel Overlay) --- */}
       {selectedNode && (
-        <div className="absolute right-4 bottom-4 w-72 bg-black/90 border border-teal-500/30 rounded-xl p-6 backdrop-blur-xl shadow-2xl animate-in slide-in-from-right duration-500 z-30 pointer-events-auto">
-          <button
-            onClick={() => setSelectedNode(null)}
-            className="absolute top-4 left-4 text-gray-500 hover:text-white transition-colors"
-          >
-            <Maximize2 size={14} className="rotate-45" />
-          </button>
-
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 rounded-lg bg-teal-500/20 flex items-center justify-center text-teal-400">
-              <Info size={24} />
-            </div>
-            <div>
-              <h3 className="text-white font-display text-lg">{selectedNode.id}</h3>
-              <p className="text-[10px] font-mono text-teal-500 uppercase">{selectedNode.group}_NODE</p>
-            </div>
+        <div className="absolute right-6 bottom-6 w-80 z-30 pointer-events-auto animate-in slide-in-from-bottom-10 duration-300">
+          {/* "POW!" Effect behind the panel */}
+          <div className="absolute -top-10 -left-10 text-[#E07000] font-black text-6xl opacity-80 rotate-[-15deg] z-0 drop-shadow-[2px_2px_0px_#000]">
+            DATA!
           </div>
 
-          <div className="space-y-4">
-            <div>
-              <div className="flex justify-between text-[10px] font-mono text-gray-500 mb-1 uppercase">
-                <span>Semantic_Weight</span>
-                <span>{selectedNode.value}</span>
+          {/* The Panel Itself */}
+          <div className="relative bg-white border-[6px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-0 overflow-hidden">
+            {/* Header: Narrator Box */}
+            <div className="bg-[#FFCC00] border-b-4 border-black p-3 flex justify-between items-start">
+              <div>
+                <h3 className="text-black font-black text-2xl uppercase leading-none">{selectedNode.id}</h3>
+                <span className="inline-block mt-1 px-2 py-0.5 bg-black text-white text-[10px] font-bold uppercase">
+                  {selectedNode.group}_CLASS
+                </span>
               </div>
-              <div className="w-full h-1 bg-gray-800 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-teal-500"
-                  style={{ width: `${(selectedNode.value / 40) * 100}%` }}
-                />
-              </div>
+              <button
+                onClick={() => setSelectedNode(null)}
+                className="text-black hover:text-red-600 transition-colors"
+              >
+                <X size={24} strokeWidth={3} />
+              </button>
             </div>
 
-            <div className="bg-white/5 border border-white/10 rounded-lg p-3">
-              <p className="text-[10px] font-mono text-gray-500 uppercase mb-2">Linked_Concepts</p>
-              <div className="flex flex-wrap gap-2">
-                {initialData.links
-                  .filter(
-                    (l) =>
-                      (l.source as any).id === selectedNode.id || (l.target as any).id === selectedNode.id
-                  )
-                  .map((l, i) => {
-                    const neighbor =
-                      (l.source as any).id === selectedNode.id ? (l.target as any).id : (l.source as any).id;
-                    return (
-                      <span
-                        key={i}
-                        className="px-2 py-0.5 bg-teal-500/10 border border-teal-500/20 text-[9px] text-teal-400 rounded"
-                      >
-                        {neighbor}
-                      </span>
-                    );
-                  })}
+            {/* Content: Speech Bubble Style */}
+            <div className="p-4 space-y-4 relative">
+              {/* Stats Bar */}
+              <div>
+                <div className="flex justify-between text-xs font-bold text-black mb-1 uppercase">
+                  <span>POWER LEVEL</span>
+                  <span>{selectedNode.value}</span>
+                </div>
+                <div className="w-full h-4 border-2 border-black bg-white relative">
+                  <div
+                    className="h-full bg-[#E07000] border-r-2 border-black"
+                    style={{ width: `${(selectedNode.value / 40) * 100}%` }}
+                  />
+                  {/* Scanlines on bar */}
+                  <div className="absolute inset-0 bg-[linear-gradient(transparent_50%,rgba(0,0,0,0.2)_50%)] bg-[size:4px_4px]"></div>
+                </div>
               </div>
-            </div>
 
-            <div className="flex gap-2">
-              <button className="flex-1 py-2 bg-teal-600 hover:bg-teal-500 text-white font-bold text-[10px] rounded transition-all flex items-center justify-center gap-2">
-                <Share2 size={12} /> اشتراک تحلیل
-              </button>
-              <button className="p-2 bg-white/5 hover:bg-white/10 text-gray-400 rounded border border-white/10">
-                <Activity size={14} />
-              </button>
+              {/* Linked Concepts */}
+              <div className="bg-[#f0f0f0] border-2 border-black border-dashed p-3 relative">
+                <p className="absolute -top-3 right-2 bg-white px-1 text-[10px] font-bold text-black border border-black">
+                  LINKS
+                </p>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {initialData.links
+                    .filter(
+                      (l) =>
+                        (l.source as any).id === selectedNode.id || (l.target as any).id === selectedNode.id
+                    )
+                    .map((l, i) => {
+                      const neighbor =
+                        (l.source as any).id === selectedNode.id
+                          ? (l.target as any).id
+                          : (l.source as any).id;
+                      return (
+                        <span
+                          key={i}
+                          className="px-2 py-1 bg-white border border-black text-[10px] font-bold text-black shadow-[2px_2px_0px_0px_#000]"
+                        >
+                          {neighbor}
+                        </span>
+                      );
+                    })}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2 pt-2">
+                <button className="flex-1 py-3 bg-[#006000] hover:bg-[#008000] border-2 border-black text-white font-black text-xs shadow-[3px_3px_0px_0px_#000] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2 uppercase">
+                  <Share2 size={14} /> SHARE
+                </button>
+                <button className="px-4 bg-[#500050] hover:bg-[#700070] border-2 border-black text-white shadow-[3px_3px_0px_0px_#000] active:translate-y-1 active:shadow-none transition-all">
+                  <Activity size={16} />
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Scanline / Grid Overlays */}
-      <div className="absolute inset-0  opacity-[0.03] bg-[linear-gradient(rgba(0,255,255,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,255,0.1)_1px,transparent_1px)] bg-[size:40px_40px]"></div>
-
-      {/* Bottom Status Bar */}
-      <div className="absolute bottom-4 left-6  flex items-center gap-4 text-[10px] font-mono text-gray-600">
-        <div className="flex items-center gap-2">
-          <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-          <span>SIMULATION_ACTIVE</span>
+      {/* --- STATUS BAR (Bottom Page Tear) --- */}
+      <div className="absolute bottom-0 left-0 right-0 h-8 bg-black flex items-center justify-between px-4 z-20 border-t-4 border-[#E07000]">
+        <div className="flex items-center gap-4 text-[10px] font-bold text-[#E07000] font-mono">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-[#00ff00] rounded-none animate-pulse"></div>
+            <span>SIMULATION_ONLINE</span>
+          </div>
+          <div className="flex items-center gap-2 border-l border-[#E07000] pl-4">
+            <Filter size={12} />
+            <span>ZOOM: {zoomLevel.toFixed(2)}x</span>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Filter size={12} />
-          <span>ZOOM: {zoomLevel.toFixed(2)}x</span>
-        </div>
+        <div className="text-[10px] text-gray-500 uppercase">SEGA GENESIS VDP EMULATION</div>
       </div>
     </div>
   );

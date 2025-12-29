@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
-import { Eye, Wind, Layers } from "lucide-react";
+import { Eye, Wind, Layers, Zap, Skull, Hand } from "lucide-react"; // Added icons for Sega vibe
 
 const fragments = [
   "در زندگی زخم‌هایی هست",
@@ -39,9 +39,20 @@ export const BlindOwlModule: React.FC = () => {
   useEffect(() => {
     if (!mountRef.current) return;
 
+    // --- SEGA PALETTE INTEGRATION ---
+    const PALETTE = {
+      MutantOrange: 0xe07000,
+      BruisedPurple: 0x500050,
+      SewerSludge: 0x006000,
+      InkBlack: 0x000000,
+      SketchWhite: 0xffffff,
+    };
+
     const scene = new THREE.Scene();
     sceneRef.current = scene;
-    scene.fog = new THREE.FogExp2(0x000000, 0.015);
+    // Background matches the "Bruised Purple" shadow/void
+    scene.fog = new THREE.FogExp2(PALETTE.BruisedPurple, 0.02);
+    scene.background = new THREE.Color(PALETTE.BruisedPurple);
 
     const width = mountRef.current.clientWidth;
     const height = mountRef.current.clientHeight;
@@ -55,10 +66,11 @@ export const BlindOwlModule: React.FC = () => {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     mountRef.current.appendChild(renderer.domElement);
 
-    const ambientLight = new THREE.AmbientLight(0x404040, 1);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
     scene.add(ambientLight);
 
-    const pointLight = new THREE.PointLight(0xa855f7, 2, 50);
+    // Changed light to Mutant Orange for dramatic comic contrast
+    const pointLight = new THREE.PointLight(PALETTE.MutantOrange, 3, 50);
     pointLight.position.set(0, 0, 10);
     scene.add(pointLight);
 
@@ -75,13 +87,18 @@ export const BlindOwlModule: React.FC = () => {
         ctx.fillStyle = "rgba(0,0,0,0)";
         ctx.fillRect(0, 0, 512, 128);
 
-        ctx.shadowColor = "rgba(255, 255, 255, 0.8)";
-        ctx.shadowBlur = 15;
-
-        ctx.font = 'bold 60px "Vazirmatn"';
-        ctx.fillStyle = "#e0e0e0";
+        // COMIC STYLE TEXT RENDERING
+        ctx.font = 'bold 60px "Vazirmatn"'; // Keep font but style it
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
+
+        // Thick Ink Outline
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = "#000000";
+        ctx.strokeText(text, 256, 64);
+
+        // White Fill (Sketch White)
+        ctx.fillStyle = "#FFFFFF";
         ctx.fillText(text, 256, 64);
       }
       const tex = new THREE.CanvasTexture(canvas);
@@ -94,9 +111,9 @@ export const BlindOwlModule: React.FC = () => {
       const material = new THREE.SpriteMaterial({
         map: texture,
         transparent: true,
-        opacity: 0.6 + Math.random() * 0.4,
+        opacity: 0.8, // Increased opacity for comic visibility
         color: 0xffffff,
-        blending: THREE.AdditiveBlending,
+        // Removed AdditiveBlending to make text look like solid paper cutouts
       });
       const sprite = new THREE.Sprite(material);
 
@@ -122,10 +139,10 @@ export const BlindOwlModule: React.FC = () => {
 
     particlesGeom.setAttribute("position", new THREE.BufferAttribute(posArray, 3));
     const particlesMat = new THREE.PointsMaterial({
-      size: 0.1,
-      color: 0x888888,
+      size: 0.15,
+      color: PALETTE.MutantOrange, // Orange sparks/dust
       transparent: true,
-      opacity: 0.5,
+      opacity: 0.6,
       blending: THREE.AdditiveBlending,
     });
     const particlesMesh = new THREE.Points(particlesGeom, particlesMat);
@@ -192,47 +209,94 @@ export const BlindOwlModule: React.FC = () => {
   }, [speed, turbulence]);
 
   return (
-    <div className="h-full relative overflow-hidden bg-black group">
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex gap-4 bg-black/60 border border-white/10 p-3 rounded-full backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-        <div className="flex flex-col items-center">
-          <label className="text-[9px] text-gray-500 font-mono mb-1 flex items-center gap-1">
-            <Wind size={10} /> VELOCITY
-          </label>
-          <input
-            type="range"
-            min="0.2"
-            max="5"
-            step="0.1"
-            value={speed}
-            onChange={(e) => setSpeed(Number(e.target.value))}
-            className="w-24 h-1 bg-gray-700 rounded appearance-none cursor-pointer accent-purple-500"
-          />
+    // --- THE VOID (Artist's Desk Background) ---
+    <div className="h-full w-full relative bg-[#1a1a1a] p-6 flex items-center justify-center overflow-hidden font-mono">
+      {/* --- COMIC PANEL CONTAINER --- */}
+      <div className="relative w-full h-full bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden group">
+        {/* --- HEADER: INVENTORY SLOTS (Top Right) --- */}
+        <div className="absolute top-4 right-4 z-30 flex gap-2">
+          {/* Slot 1: Status */}
+          <div className="bg-[#FFCC00] border-2 border-black p-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+            <div className="bg-black text-[#FFCC00] text-[10px] px-2 py-1 font-bold uppercase tracking-widest">
+              EPISODE 1
+            </div>
+          </div>
+          {/* Slot 2: Depth Indicator */}
+          <div className="bg-white border-2 border-black p-1 w-12 h-12 flex flex-col items-center justify-center shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+            <Eye size={16} className="text-black mb-1" />
+            <span className="text-[8px] font-bold text-[#E07000]">{(speed * 100).toFixed(0)}m</span>
+          </div>
         </div>
-        <div className="w-[1px] h-8 bg-white/10"></div>
-        <div className="flex flex-col items-center">
-          <label className="text-[9px] text-gray-500 font-mono mb-1 flex items-center gap-1">
-            <Layers size={10} /> CHAOS
-          </label>
-          <input
-            type="range"
-            min="0"
-            max="2"
-            step="0.1"
-            value={turbulence}
-            onChange={(e) => setTurbulence(Number(e.target.value))}
-            className="w-24 h-1 bg-gray-700 rounded appearance-none cursor-pointer accent-purple-500"
-          />
+
+        {/* --- DECORATIVE: ONOMATOPOEIA (Behind UI, Top Left) --- */}
+        <div className="absolute top-10 left-10 z-20 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform -rotate-12">
+          <span
+            className="text-6xl font-black text-white"
+            style={{ WebkitTextStroke: "3px black", textShadow: "4px 4px 0 #E07000" }}
+          >
+            VOOOOM!
+          </span>
         </div>
+
+        {/* --- THREE.JS CANVAS MOUNT --- */}
+        <div ref={mountRef} className="w-full h-full cursor-crosshair" />
+
+        {/* --- FOOTER: NARRATOR BOX CONTROLS --- */}
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 w-auto">
+          {/* Yellow Narrator Box Style */}
+          <div className="bg-[#FFCC00] border-4 border-black p-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex gap-6 items-end transform transition-transform hover:-translate-y-1">
+            {/* Control 1: Velocity */}
+            <div className="flex flex-col items-start gap-1">
+              <label className="text-xs font-black text-black uppercase flex items-center gap-2 bg-white px-1 border border-black">
+                <Wind size={12} /> VELOCITY
+              </label>
+              <input
+                type="range"
+                min="0.2"
+                max="5"
+                step="0.1"
+                value={speed}
+                onChange={(e) => setSpeed(Number(e.target.value))}
+                className="w-32 h-4 appearance-none bg-black border-2 border-white cursor-pointer accent-[#E07000]"
+                style={{
+                  backgroundImage: "linear-gradient(90deg, #000 50%, transparent 50%)",
+                  backgroundSize: "4px 100%",
+                }}
+              />
+            </div>
+
+            {/* Divider */}
+            <div className="w-1 h-8 bg-black skew-x-12"></div>
+
+            {/* Control 2: Chaos */}
+            <div className="flex flex-col items-start gap-1">
+              <label className="text-xs font-black text-black uppercase flex items-center gap-2 bg-white px-1 border border-black">
+                <Layers size={12} /> CHAOS
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="2"
+                step="0.1"
+                value={turbulence}
+                onChange={(e) => setTurbulence(Number(e.target.value))}
+                className="w-32 h-4 appearance-none bg-black border-2 border-white cursor-pointer accent-[#E07000]"
+              />
+            </div>
+
+            {/* Decorative Icon */}
+            <div className="absolute -top-3 -right-3 bg-white border-2 border-black p-1 rotate-12">
+              <Zap size={16} className="text-[#E07000] fill-current" />
+            </div>
+          </div>
+        </div>
+
+        {/* --- PAGE TEAR EFFECT (Bottom Right Corner) --- */}
+        <div
+          className="absolute bottom-0 right-0 w-16 h-16 bg-white border-l-4 border-t-4 border-black z-20"
+          style={{ clipPath: "polygon(100% 0, 0% 100%, 100% 100%)" }}
+        ></div>
       </div>
-      <div className="absolute inset-0  bg-[radial-gradient(circle_at_center,transparent_30%,rgba(0,0,0,0.8)_90%)] z-10"></div>
-      <div className="absolute top-4 right-4 z-20 text-right opacity-50">
-        <div className="flex items-center justify-end gap-2 text-purple-400 font-mono text-xs">
-          <span>IMMERSION_ENGINE</span>
-          <Eye size={14} className="animate-pulse" />
-        </div>
-        <p className="text-[9px] text-gray-600 font-mono mt-1">DEPTH: {(speed * 100).toFixed(0)}m/s</p>
-      </div>
-      <div ref={mountRef} className="w-full h-full cursor-none" />
     </div>
   );
 };

@@ -1,19 +1,19 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   Zap,
-  AlertTriangle,
-  Cpu,
-  Terminal,
   Activity,
   RefreshCw,
   Layers,
-  ShieldAlert,
   Hash,
   Maximize,
   Ghost,
   Sliders,
   Play,
   Trash2,
+  Skull,
+  Hand,
+  PenTool,
+  XCircle,
 } from "lucide-react";
 
 interface GlitchState {
@@ -37,7 +37,7 @@ export const GlitchModule: React.FC = () => {
   const [frame, setFrame] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Zalgo / Corruption Logic
+  // Zalgo / Corruption Logic (Logic Preserved 100%)
   const zalgoUp = [
     "\u030d",
     "\u030e",
@@ -107,67 +107,105 @@ export const GlitchModule: React.FC = () => {
     setOutput(corrupted);
   };
 
+  // --- COMIX ZONE STYLES ---
+  const colors = {
+    mutantOrange: "#E07000",
+    sewerSludge: "#006000",
+    bruisedPurple: "#2a1a2a", // Darker for background
+    sketchWhite: "#FFFFFF",
+    inkBlack: "#000000",
+    narratorYellow: "#FFCC00",
+  };
+
   return (
-    <div className="h-full flex flex-col bg-[#050505] p-4 md:p-6 overflow-hidden select-none">
-      {/* Header: System Status */}
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4 border-b border-neon-green/20 pb-4 mb-6 shrink-0">
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-neon-green/10 rounded-xl text-neon-green shadow-[0_0_15px_rgba(57,255,20,0.2)]">
-            <Zap size={28} className={state.entropy > 7 ? "animate-pulse" : ""} />
+    <div
+      className="h-full flex flex-col p-4 md:p-6 overflow-hidden select-none font-mono relative"
+      style={{ backgroundColor: colors.bruisedPurple }}
+    >
+      {/* Background Texture: The Artist's Desk */}
+      <div
+        className="absolute inset-0 opacity-10 pointer-events-none"
+        style={{
+          backgroundImage: "radial-gradient(#500050 1px, transparent 1px)",
+          backgroundSize: "20px 20px",
+        }}
+      ></div>
+
+      {/* HEADER: THE INVENTORY (Item Slots) */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 shrink-0 z-10">
+        {/* Title Card */}
+        <div className="flex items-center gap-4 bg-black p-2 border-2 border-white transform -rotate-1 shadow-[4px_4px_0px_#000]">
+          <div className="bg-[#E07000] p-2 border border-black">
+            <Zap size={24} className="text-black" />
           </div>
           <div>
-            <h2 className="text-neon-green font-display text-2xl tracking-tighter">موتور تخریب سیگنال</h2>
-            <p className="text-[10px] font-mono text-gray-500 uppercase tracking-[0.3em]">
-              Neural_Signal_Interference_v1.0
-            </p>
+            <h2
+              className="text-white font-black text-xl tracking-widest uppercase"
+              style={{ textShadow: "2px 2px 0 #E07000" }}
+            >
+              MORTUS_ENGINE
+            </h2>
+            <p className="text-[10px] text-[#FFCC00] uppercase tracking-widest">EPISODE 1: SIGNAL DECAY</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-4 bg-black/40 px-4 py-2 rounded-lg border border-white/5">
-          <div className="flex flex-col items-end">
-            <span className="text-[9px] font-mono text-gray-600 uppercase">Buffer_Health</span>
-            <span className={`text-xs font-mono ${state.entropy > 8 ? "text-red-500" : "text-neon-green"}`}>
-              {Math.max(0, 100 - state.entropy * 10)}% INTEGRITY
-            </span>
+        {/* Inventory Slots (Status) */}
+        <div className="flex items-center gap-2">
+          {/* Slot 1: Health */}
+          <div className="bg-black p-1 border-2 border-gray-600">
+            <div className="w-24 h-8 bg-[#003300] relative border border-gray-700">
+              <div
+                className="h-full bg-[#006000] transition-all duration-300"
+                style={{ width: `${Math.max(0, 100 - state.entropy * 10)}%` }}
+              ></div>
+              <span className="absolute inset-0 flex items-center justify-center text-[9px] text-white font-bold uppercase drop-shadow-md">
+                INTEGRITY
+              </span>
+            </div>
           </div>
-          <div className="w-[1px] h-8 bg-white/10"></div>
-          <div className="flex items-center gap-2">
-            <Activity size={14} className="text-neon-green animate-pulse" />
-            <span className="text-[10px] font-mono text-gray-400 uppercase">Sync_Active</span>
+
+          {/* Slot 2: Sync */}
+          <div className="w-10 h-10 bg-yellow-400 border-2 border-black flex items-center justify-center shadow-[2px_2px_0px_#000]">
+            <Activity size={20} className="text-black animate-pulse" />
           </div>
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6 flex-grow overflow-hidden">
-        {/* Control Tower */}
-        <div className="w-full lg:w-80 flex flex-col gap-4 shrink-0 overflow-y-auto custom-scrollbar pr-1">
-          <div className="bg-panel-black border border-white/10 p-5 rounded-2xl relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-4 opacity-5 group-focus-within:opacity-20 transition-opacity">
-              <Terminal size={60} />
+      <div className="flex flex-col lg:flex-row gap-8 flex-grow overflow-hidden z-10">
+        {/* LEFT COLUMN: CONTROLS (The Sketchpad) */}
+        <div className="w-full lg:w-80 flex flex-col gap-6 shrink-0 overflow-y-auto custom-scrollbar pr-2">
+          {/* Input Box: Narrator Box Style */}
+          <div className="bg-[#FFCC00] border-4 border-black p-4 shadow-[8px_8px_0px_rgba(0,0,0,0.5)] relative group transform rotate-1">
+            <div className="absolute -top-3 -left-3 bg-white border-2 border-black px-2 py-1 text-[10px] font-bold uppercase transform -rotate-3">
+              <Hash size={10} className="inline mr-1" /> DIALOGUE_INPUT
             </div>
-            <label className="text-[10px] font-mono text-gray-500 mb-2 block uppercase tracking-widest flex items-center gap-2">
-              <Hash size={10} /> Source_String_Input
-            </label>
-            <input
-              type="text"
+            <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              className="w-full bg-black/50 border border-white/10 rounded-xl p-4 text-white text-lg outline-none focus:border-neon-green transition-all font-sans relative z-10"
-              placeholder="پیام خود را تزریق کنید..."
+              className="w-full bg-white/50 border-2 border-black/20 p-2 text-black text-sm font-bold outline-none focus:bg-white focus:border-black transition-all resize-none h-24 placeholder-black/40"
+              placeholder="WRITE YOUR DESTINY..."
               dir="auto"
             />
+            <PenTool size={16} className="absolute bottom-2 right-2 text-black opacity-20" />
           </div>
 
-          <div className="bg-panel-black border border-white/10 p-5 rounded-2xl space-y-6 shadow-inner">
-            <h3 className="text-gray-300 font-bold text-xs flex items-center gap-2 border-b border-white/5 pb-3 uppercase tracking-tighter">
-              <Sliders size={14} className="text-neon-green" /> Distortion_Parameters
+          {/* Sliders Panel: Tech Panel Style */}
+          <div className="bg-gray-900 border-4 border-gray-600 p-5 space-y-6 shadow-lg relative">
+            {/* Screws */}
+            <div className="absolute top-1 left-1 w-2 h-2 bg-gray-500 rounded-full border border-black"></div>
+            <div className="absolute top-1 right-1 w-2 h-2 bg-gray-500 rounded-full border border-black"></div>
+            <div className="absolute bottom-1 left-1 w-2 h-2 bg-gray-500 rounded-full border border-black"></div>
+            <div className="absolute bottom-1 right-1 w-2 h-2 bg-gray-500 rounded-full border border-black"></div>
+
+            <h3 className="text-[#E07000] font-black text-xs flex items-center gap-2 border-b-2 border-gray-700 pb-2 uppercase">
+              <Sliders size={14} /> MUTATION_PARAMS
             </h3>
 
-            {/* Entropy Slider */}
-            <div className="space-y-3">
-              <div className="flex justify-between text-[10px] font-mono">
-                <span className="text-gray-500 uppercase">Entropy_Level</span>
-                <span className="text-neon-green">{state.entropy * 10}%</span>
+            {/* Entropy (Chaos) */}
+            <div className="space-y-2">
+              <div className="flex justify-between text-[10px] font-bold text-gray-400 uppercase">
+                <span>CHAOS_LEVEL</span>
+                <span className="text-[#E07000]">{state.entropy * 10}%</span>
               </div>
               <input
                 type="range"
@@ -176,15 +214,19 @@ export const GlitchModule: React.FC = () => {
                 step="0.1"
                 value={state.entropy}
                 onChange={(e) => setState({ ...state, entropy: Number(e.target.value) })}
-                className="w-full h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-neon-green"
+                className="w-full h-4 bg-black border border-gray-600 appearance-none cursor-pointer accent-[#E07000]"
+                style={{
+                  backgroundImage: "linear-gradient(90deg, #000 50%, transparent 50%)",
+                  backgroundSize: "4px 100%",
+                }}
               />
             </div>
 
-            {/* Clock Speed Slider */}
-            <div className="space-y-3">
-              <div className="flex justify-between text-[10px] font-mono">
-                <span className="text-gray-500 uppercase">Clock_Frequency</span>
-                <span className="text-neon-blue">{(state.clockSpeed * 100).toFixed(0)}Hz</span>
+            {/* Clock Speed (Ink Flow) */}
+            <div className="space-y-2">
+              <div className="flex justify-between text-[10px] font-bold text-gray-400 uppercase">
+                <span>INK_FLOW</span>
+                <span className="text-blue-400">{(state.clockSpeed * 100).toFixed(0)}Hz</span>
               </div>
               <input
                 type="range"
@@ -193,140 +235,150 @@ export const GlitchModule: React.FC = () => {
                 step="0.1"
                 value={state.clockSpeed}
                 onChange={(e) => setState({ ...state, clockSpeed: Number(e.target.value) })}
-                className="w-full h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-neon-blue"
+                className="w-full h-4 bg-black border border-gray-600 appearance-none cursor-pointer accent-blue-500"
               />
             </div>
 
-            {/* Mode Selector */}
+            {/* Mode Selector (Action Buttons) */}
             <div className="grid grid-cols-3 gap-2">
               {[
-                { id: "corruption", icon: Ghost, label: "GHOST" },
-                { id: "datamosh", icon: Layers, label: "MOSH" },
-                { id: "ascii", icon: Cpu, label: "CODE" },
+                { id: "corruption", icon: Skull, label: "ROT" },
+                { id: "datamosh", icon: Layers, label: "SMASH" },
+                { id: "ascii", icon: Hash, label: "CODE" },
               ].map((m) => (
                 <button
                   key={m.id}
                   onClick={() => setState({ ...state, mode: m.id as any })}
-                  className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all ${
+                  className={`flex flex-col items-center justify-center p-2 border-2 transition-all ${
                     state.mode === m.id
-                      ? "bg-neon-green/20 border-neon-green text-neon-green shadow-lg"
-                      : "bg-white/5 border-transparent text-gray-500 hover:text-gray-300"
+                      ? "bg-[#E07000] border-white text-black shadow-[2px_2px_0px_#FFF]"
+                      : "bg-black border-gray-700 text-gray-500 hover:border-gray-500"
                   }`}
                 >
-                  <m.icon size={18} className="mb-2" />
-                  <span className="text-[8px] font-mono font-bold tracking-widest">{m.label}</span>
+                  <m.icon size={16} className="mb-1" />
+                  <span className="text-[8px] font-bold tracking-widest">{m.label}</span>
                 </button>
               ))}
             </div>
           </div>
 
+          {/* The Big Red Button */}
           <button
             onClick={() => setState({ ...state, isBreached: !state.isBreached })}
-            className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-3 transition-all transform active:scale-95
+            className={`w-full py-4 font-black text-sm uppercase border-4 border-black shadow-[4px_4px_0px_#000] flex items-center justify-center gap-3 transition-all active:translate-y-1 active:shadow-none
                             ${
                               state.isBreached
-                                ? "bg-red-600 text-white shadow-[0_0_25px_rgba(220,38,38,0.5)] animate-pulse"
-                                : "bg-white/5 text-gray-400 hover:bg-white/10"
+                                ? "bg-red-600 text-white animate-pulse"
+                                : "bg-white text-black hover:bg-gray-200"
                             }
                         `}
           >
-            {state.isBreached ? <ShieldAlert size={20} /> : <Play size={20} />}
-            {state.isBreached ? "BREAK_SYSTEM_CORE" : "TEST_INTEGRITY"}
+            {state.isBreached ? <XCircle size={20} /> : <Play size={20} />}
+            {state.isBreached ? "SYSTEM_CRITICAL!" : "INITIATE_SEQUENCE"}
           </button>
         </div>
 
-        {/* The Reactor (Output Area) */}
-        <div className="flex-grow flex flex-col bg-panel-black border border-white/10 rounded-3xl relative overflow-hidden shadow-2xl">
-          {/* Visual Decoration / Scanline */}
-          <div className="absolute inset-0 bg-scanlines opacity-10  z-10"></div>
-          <div className="absolute top-0 left-0 w-full h-1 bg-neon-green/30 animate-scan z-20"></div>
-
-          {/* HUD Overlays */}
-          <div className="absolute top-6 left-6 z-30 flex flex-col gap-2">
-            <div className="bg-black/60 backdrop-blur px-3 py-1 rounded border border-neon-green/20 text-[9px] font-mono text-neon-green flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-neon-green animate-pulse"></div>
-              LIVE_DECODING_ACTIVE
-            </div>
-            <div className="bg-black/60 backdrop-blur px-3 py-1 rounded border border-white/10 text-[9px] font-mono text-gray-500">
-              COORDS: {Math.sin(frame * 0.1).toFixed(4)} / {Math.cos(frame * 0.1).toFixed(4)}
-            </div>
+        {/* RIGHT COLUMN: THE COMIC PANEL (Output) */}
+        <div className="flex-grow flex flex-col relative">
+          {/* "POW!" Effect behind the panel */}
+          <div
+            className="absolute -top-6 -right-6 text-[#E07000] font-black text-6xl opacity-20 rotate-12 select-none z-0 pointer-events-none"
+            style={{ textShadow: "4px 4px 0 #000" }}
+          >
+            ZAP!
           </div>
 
-          <div className="absolute top-6 right-6 z-30 flex gap-2">
-            <button className="p-2 bg-white/5 rounded-lg text-gray-500 hover:text-white transition-colors">
-              <Maximize size={16} />
-            </button>
-            <button
-              onClick={() => setOutput("")}
-              className="p-2 bg-white/5 rounded-lg text-gray-500 hover:text-red-400 transition-colors"
-            >
-              <Trash2 size={16} />
-            </button>
-          </div>
-
-          {/* Main Render Stage */}
-          <div className="flex-grow flex items-center justify-center p-8 md:p-12 relative overflow-hidden">
-            {/* Shadow Layers for RGB Split Effect */}
-            <div
-              className={`text-4xl md:text-6xl lg:text-7xl text-center break-words font-display leading-tight relative transition-all duration-75
-                            ${state.isBreached ? "scale-110" : ""}
-                        `}
-            >
-              {/* Blue Layer */}
-              <p
-                className="absolute inset-0 text-neon-blue mix-blend-screen opacity-50 select-none "
-                style={{
-                  transform: `translate(${Math.sin(frame * 0.5) * state.shift}px, ${
-                    Math.cos(frame * 0.5) * state.shift
-                  }px)`,
-                }}
-              >
-                {output}
-              </p>
-              {/* Red Layer */}
-              <p
-                className="absolute inset-0 text-red-500 mix-blend-screen opacity-50 select-none "
-                style={{
-                  transform: `translate(${-Math.sin(frame * 0.5) * state.shift}px, ${
-                    -Math.cos(frame * 0.5) * state.shift
-                  }px)`,
-                }}
-              >
-                {output}
-              </p>
-              {/* Main Layer */}
-              <p
-                className={`text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] transition-all duration-75 ${
-                  state.isBreached ? "skew-x-12 blur-[1px]" : ""
-                }`}
-              >
-                {output}
-              </p>
-            </div>
-          </div>
-
-          {/* Diagnostics Footer */}
-          <div className="px-8 py-4 bg-black/60 border-t border-white/5 flex justify-between items-center text-[10px] font-mono text-gray-600 relative z-30">
-            <div className="flex gap-6">
-              <span className="flex items-center gap-2">
-                <RefreshCw size={12} className={state.clockSpeed > 2 ? "animate-spin" : ""} /> REFRESH_RATE:{" "}
-                {(1000 / (100 / state.clockSpeed)).toFixed(0)}Hz
-              </span>
-              <span className="hidden md:flex items-center gap-2">
-                <Layers size={12} /> MODE: {state.mode.toUpperCase()}
+          {/* The Panel Container */}
+          <div
+            className="flex-grow bg-white border-4 border-black relative overflow-hidden shadow-[10px_10px_0px_rgba(0,0,0,0.3)] z-10"
+            style={{ clipPath: "polygon(0% 0%, 100% 1%, 99% 99%, 1% 100%)" }}
+          >
+            {" "}
+            {/* Slight distortion */}
+            {/* Panel Header/Caption */}
+            <div className="absolute top-0 left-0 bg-[#FFCC00] border-b-2 border-r-2 border-black px-4 py-1 z-30">
+              <span className="text-[10px] font-black text-black uppercase tracking-widest">
+                PANEL 1: THE REVELATION
               </span>
             </div>
-            <div className="flex items-center gap-3">
-              <span className="text-neon-green/40">CORE_STABLE</span>
-              <div className="flex gap-1">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <div
-                    key={i}
-                    className={`w-1 h-3 rounded-full ${
-                      i <= (10 - state.entropy) / 2 ? "bg-neon-green" : "bg-gray-800"
-                    }`}
-                  ></div>
-                ))}
+            {/* Action Buttons (Top Right) */}
+            <div className="absolute top-4 right-4 z-30 flex gap-2">
+              <button className="p-1 bg-white border-2 border-black hover:bg-black hover:text-white transition-colors">
+                <Maximize size={14} />
+              </button>
+              <button
+                onClick={() => setOutput("")}
+                className="p-1 bg-white border-2 border-black hover:bg-red-500 hover:text-white transition-colors"
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
+            {/* Main Content Area */}
+            <div className="absolute inset-0 flex items-center justify-center p-12">
+              {/* The "Mortus Hand" Cursor Effect */}
+              <div
+                className="absolute z-20 pointer-events-none transition-all duration-100"
+                style={{
+                  left: `${50 + Math.sin(frame * 0.1) * 20}%`,
+                  top: `${50 + Math.cos(frame * 0.1) * 20}%`,
+                }}
+              >
+                <Hand
+                  size={64}
+                  className="text-black drop-shadow-xl fill-white transform -rotate-12 opacity-50"
+                  strokeWidth={1.5}
+                />
+              </div>
+
+              {/* Text Rendering */}
+              <div
+                className={`text-4xl md:text-6xl lg:text-7xl text-center break-words font-black leading-tight relative transition-all duration-75
+                                    ${state.isBreached ? "scale-110 rotate-2" : ""}
+                                `}
+              >
+                {/* CMYK Misalignment Effect (Cyan) */}
+                <p
+                  className="absolute inset-0 text-cyan-500 mix-blend-multiply opacity-70 select-none"
+                  style={{
+                    transform: `translate(${Math.sin(frame * 0.5) * state.shift}px, ${
+                      Math.cos(frame * 0.5) * state.shift
+                    }px)`,
+                  }}
+                >
+                  {output}
+                </p>
+                {/* CMYK Misalignment Effect (Magenta) */}
+                <p
+                  className="absolute inset-0 text-magenta-500 mix-blend-multiply opacity-70 select-none"
+                  style={{
+                    transform: `translate(${-Math.sin(frame * 0.5) * state.shift}px, ${
+                      -Math.cos(frame * 0.5) * state.shift
+                    }px)`,
+                    color: "#FF00FF",
+                  }}
+                >
+                  {output}
+                </p>
+
+                {/* Main Ink Layer */}
+                <p className="text-black relative z-10">{output}</p>
+              </div>
+            </div>
+            {/* Footer / Gutter Info */}
+            <div className="absolute bottom-0 left-0 w-full bg-white border-t-2 border-black p-2 flex justify-between items-center">
+              <div className="flex items-center gap-4 text-[9px] font-bold uppercase text-gray-500">
+                <span className="flex items-center gap-1">
+                  <RefreshCw size={10} className={state.clockSpeed > 2 ? "animate-spin" : ""} />
+                  FPS: {(1000 / (100 / state.clockSpeed)).toFixed(0)}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Layers size={10} /> STYLE: {state.mode}
+                </span>
+              </div>
+
+              {/* Page Number */}
+              <div className="w-6 h-6 rounded-full border-2 border-black flex items-center justify-center text-[10px] font-black">
+                {frame % 99}
               </div>
             </div>
           </div>
