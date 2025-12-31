@@ -14,7 +14,6 @@ import LearnPage from "./pages/LearnPage";
 import LessonPage from "./pages/LessonPage";
 import DashboardPage from "./pages/DashboardPage";
 import AuthPage from "./pages/AuthPage";
-import AdminDashboardPage from "./pages/AdminDashboardPage";
 import GlossaryPage from "./pages/GlossaryPage";
 
 const App: React.FC = () => {
@@ -39,7 +38,6 @@ const App: React.FC = () => {
               <Route path="/lab" element={<LabPage />} />
               <Route path="/glossary" element={<GlossaryPage />} />
               <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/admin" element={<AdminDashboardPage />} />
               <Route path="/login" element={<AuthPage />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/learn" element={<LearnPage />} />

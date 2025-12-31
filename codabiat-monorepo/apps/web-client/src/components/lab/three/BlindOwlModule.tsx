@@ -229,7 +229,7 @@ export const BlindOwlModule: React.FC = () => {
         </div>
 
         {/* --- DECORATIVE: ONOMATOPOEIA (Behind UI, Top Left) --- */}
-        <div className="absolute top-10 left-10 z-20 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform -rotate-12">
+        <div className="absolute top-10 left-10 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform -rotate-12">
           <span
             className="text-6xl font-black text-white"
             style={{ WebkitTextStroke: "3px black", textShadow: "4px 4px 0 #E07000" }}

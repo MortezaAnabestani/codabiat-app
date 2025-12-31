@@ -34,6 +34,7 @@ import {
   ShieldAlert,
   Grid3X3,
   Monitor,
+  BookOpen,
 } from "lucide-react";
 
 // Import modules (Keep existing imports)
@@ -100,6 +101,35 @@ type ToolMode =
   | "cyberweaver"
   | "retroconsole";
 
+// توضیحات ادبیات الکترونیکی برای هر ماژول
+const MODULE_DESCRIPTIONS: Record<ToolMode, string> = {
+  neural: "هوش مصنوعی به عنوان نویسنده‌ی همکار: تولید متن خلاقانه با استفاده از شبکه‌های عصبی. در ادبیات الکترونیک، AI نه تنها ابزار، بلکه شریک خلاقانه‌ی نویسنده است.",
+  cutup: "تکنیک برش و ترکیب مجدد متن که توسط ویلیام باروز ابداع شد. در فضای دیجیتال، این روش به ابزاری قدرتمند برای کشف معانی پنهان و ایجاد روایت‌های غیرخطی تبدیل شده است.",
+  glitch: "زیبایی‌شناسی خطا: تبدیل اشکالات دیجیتال به هنر. در ادبیات الکترونیک، Glitch به ما یادآوری می‌کند که رسانه خود بخشی از پیام است.",
+  geometric: "تبدیل متن به اشکال هندسی: وقتی کلمات از خطی بودن خارج می‌شوند و در فضای دوبعدی معنا پیدا می‌کنند. شعر بصری در عصر دیجیتال.",
+  permutation: "جایگشت‌های زبانی: کاوش در همه‌ی ترکیب‌های ممکن یک متن. الگوریتم به عنوان شاعر ریاضی‌دان.",
+  critical: "کد به عنوان نقد: برنامه‌نویسی که درباره‌ی خود برنامه‌نویسی صحبت می‌کند. متامتنی‌ت در عصر کد.",
+  threed: "کلمات در فضای سه‌بعدی: وقتی متن از صفحه جدا می‌شود و در فضا شناور می‌گردد. تجربه‌ی حسی از زبان.",
+  kinetic: "شعر جنبشی: کلماتی که حرکت می‌کنند، تحول می‌یابند و با زمان تعامل دارند. زمان‌مندی به عنوان عنصر شعری.",
+  installation: "متن به عنوان تجربه‌ی فضایی: ادبیات که در فضای فیزیکی یا مجازی نصب می‌شود و خواننده باید آن را تجربه کند نه فقط بخواند.",
+  p5: "خوشنویسی الگوریتمی: وقتی کد به قلم تبدیل می‌شود و الگوریتم‌ها خط می‌نویسند. تلاقی سنت و فناوری.",
+  d3: "شبکه‌های معنایی: نمایش روابط پیچیده‌ی زبانی در قالب گراف‌های تعاملی. خواندن به عنوان کاوش در فضای دانش.",
+  islimi: "اسلیمی سایبری: الگوهای اسلامی که با داده‌ها زنده می‌شوند. هنر سنتی در بستر دیجیتال.",
+  lsystem: "باغ فراکتالی: رشد ارگانیک متن بر اساس قوانین بازنویسی. زبان به عنوان سیستم زنده.",
+  sonification: "شنیدن متن: تبدیل کلمات به صدا. کاوش در بعد صوتی زبان فراتر از معنای واژگانی.",
+  blindowl: "بوف کور در فضای سه‌بعدی: تجربه‌ی غوطه‌ورانه از متن کلاسیک. وقتی رمان به جهانی قابل کاوش تبدیل می‌شود.",
+  physics: "فیزیک کلمات: وقتی واژه‌ها دارای جرم، سرعت و نیروی جاذبه می‌شوند. تجسم فیزیکی زبان.",
+  pixels: "اعوجاج پیکسلی: تصویر و متن در هم می‌آمیزند. تخریب خلاقانه برای کشف لایه‌های پنهان معنا.",
+  bio: "بیوسنتز متن: الگوریتم‌های زیستی برای تولید زبان. DNA به عنوان متن، متن به عنوان موجود زنده.",
+  fiction: "داستان تعاملی: خواننده تصمیم‌گیرنده‌ی روایت است. از hypertext fiction تا بازی‌های روایی.",
+  datadriven: "روایت مبتنی بر داده: وقتی آمار و داده‌ها داستان می‌گویند. ژورنالیسم داده محور به عنوان ادبیات.",
+  locative: "داستان مکان‌محور: روایت‌هایی که به مکان فیزیکی شما وابسته‌اند. فضا به عنوان صفحه.",
+  hypertext: "هایپرتکست: شبکه‌ای از متون به هم پیوسته. روایت غیرخطی در خالص‌ترین شکل خود.",
+  cyberbreach: "نفوذ سایبری: بازی آرکید با ذرات داده. وقتی کد به بازی تبدیل می‌شود و بازی به متن.",
+  cyberweaver: "بافنده‌ی سایبری: تبدیل متن به فرش دیجیتال. هر کلمه رشته‌ای در بافت الگوریتمی.",
+  retroconsole: "کنسول رترو: بازگشت به دوران 8-bit. نوستالژی دیجیتال به عنوان زبان ادبی."
+};
+
 // --- COMIC UI COMPONENTS ---
 
 const ComicButton = ({ id, label, icon: Icon, active, onClick }: any) => (
@@ -146,11 +176,25 @@ const InventorySlot = ({ icon: Icon, label, color, onClick }: any) => (
 );
 
 const SpeechBubble = ({ text }: { text: string }) => (
-  <div className="relative bg-white border-4 border-black p-4 rounded-[20px] mb-6 shadow-[4px_4px_0px_rgba(0,0,0,0.5)] animate-in zoom-in duration-300">
-    <p className="font-mono font-bold text-black text-xs md:text-sm uppercase leading-relaxed">{text}</p>
+  <div className="relative bg-[#FFCC00] border-4 border-black p-4 md:p-6 rounded-[20px] mb-6 shadow-[6px_6px_0px_rgba(0,0,0,0.8)] animate-in slide-in-from-top-4 duration-500">
+    {/* Book Icon */}
+    <div className="absolute -top-3 -right-3 bg-black border-4 border-[#FFCC00] p-2 rounded-full shadow-[4px_4px_0px_rgba(0,0,0,0.5)] animate-bounce">
+      <BookOpen size={20} className="text-[#FFCC00]" strokeWidth={2.5} />
+    </div>
+
+    {/* Header */}
+    <div className="flex items-center gap-2 mb-3 pb-2 border-b-2 border-black/20">
+      <div className="w-2 h-2 bg-black rounded-full"></div>
+      <span className="text-xs font-bold text-black/70 uppercase tracking-wider">درباره این ماژول</span>
+      <div className="w-2 h-2 bg-black rounded-full"></div>
+    </div>
+
+    <p className="text-black text-sm md:text-base leading-relaxed" dir="rtl" style={{ fontFamily: 'Vazirmatn, sans-serif' }}>
+      {text}
+    </p>
     {/* Bubble Tail */}
     <div className="absolute -bottom-4 left-8 w-0 h-0 border-l-[15px] border-l-transparent border-r-[15px] border-r-transparent border-t-[20px] border-t-black"></div>
-    <div className="absolute -bottom-[10px] left-[35px] w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-t-[16px] border-t-white"></div>
+    <div className="absolute -bottom-[10px] left-[35px] w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-t-[16px] border-t-[#FFCC00]"></div>
   </div>
 );
 
@@ -543,9 +587,9 @@ export const Lab: React.FC = () => {
           >
             {/* Inner Gutter/Padding */}
             <div className="absolute inset-0 p-6 md:p-10 flex flex-col">
-              {/* AI Analysis Bubble */}
-              <div className="relative z-20 max-w-2xl">
-                <SpeechBubble text={`Initializing ${activeTool} protocol... Waiting for user input.`} />
+              {/* Literary Description Bubble */}
+              <div className="relative z-20 w-full max-w-3xl">
+                <SpeechBubble text={MODULE_DESCRIPTIONS[activeTool]} />
               </div>
 
               {/* Module Render Area */}
@@ -597,9 +641,6 @@ export const Lab: React.FC = () => {
                 <h1 className="text-9xl font-black text-black display-font tracking-tighter">LOAD!</h1>
               </div>
             </div>
-
-            {/* Scanlines Overlay */}
-            <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] z-30 bg-[length:100%_4px,6px_100%] "></div>
           </div>
         </div>
 

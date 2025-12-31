@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Zap, HandMetal, Bomb, ArrowLeft, User } from "lucide-react"; // Icons mapped to Game Items
 import { useLanguage } from "../LanguageContext";
+import ComixZoneGame from "./ComixZoneGame";
 
 // --- CONSTANTS & THEME CONFIG ---
 const THEME = {
@@ -13,6 +14,220 @@ const THEME = {
     inkBlack: "#000000",
     paper: "#F4F4F4",
   },
+};
+
+// --- SUB-COMPONENT: PIXEL TITLE (MODIFIED) ---
+const PixelTitle: React.FC = () => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Audio Context Ref for Sound Effect
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const lastSoundTime = useRef<number>(0);
+
+  // Initialize Audio Context
+  useEffect(() => {
+    const initAudio = () => {
+      if (!audioCtxRef.current) {
+        audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      }
+    };
+    window.addEventListener("click", initAudio, { once: true });
+    window.addEventListener("mousemove", initAudio, { once: true });
+    return () => {
+      if (audioCtxRef.current) audioCtxRef.current.close();
+    };
+  }, []);
+
+  // Function to play retro static sound
+  const playStaticSound = () => {
+    const now = Date.now();
+    // Throttle sound to avoid chaos (play max every 100ms)
+    if (now - lastSoundTime.current < 100 || !audioCtxRef.current) return;
+
+    if (audioCtxRef.current.state === "suspended") {
+      audioCtxRef.current.resume();
+    }
+
+    const osc = audioCtxRef.current.createOscillator();
+    const gainNode = audioCtxRef.current.createGain();
+
+    osc.type = "square"; // Retro 16-bit sound
+    // Random frequency for "glitch" effect
+    osc.frequency.setValueAtTime(100 + Math.random() * 200, audioCtxRef.current.currentTime);
+
+    gainNode.gain.setValueAtTime(0.05, audioCtxRef.current.currentTime); // Low volume
+    gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtxRef.current.currentTime + 0.1);
+
+    osc.connect(gainNode);
+    gainNode.connect(audioCtxRef.current.destination);
+
+    osc.start();
+    osc.stop(audioCtxRef.current.currentTime + 0.1);
+    lastSoundTime.current = now;
+  };
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (!canvas || !ctx) return;
+
+    // --- MODIFIED CONFIGURATION ---
+    const text = "کدبیات";
+    const fontSize = 160; // Increased Size
+    const gap = 6; // Increased Gap (Bigger Pixels)
+    const mouseRadius = 50; // Tighter interaction radius
+
+    // Resize canvas
+    const resize = () => {
+      const parent = canvas.parentElement;
+      if (parent) {
+        canvas.width = parent.clientWidth;
+        canvas.height = 250; // Increased height to accommodate larger font
+      }
+    };
+    resize();
+
+    // Particle Class
+    class Particle {
+      x: number;
+      y: number;
+      originX: number;
+      originY: number;
+      color: string;
+      size: number;
+      vx: number;
+      vy: number;
+      friction: number;
+      ease: number;
+
+      constructor(x: number, y: number, color: string) {
+        this.x = Math.random() * canvas!.width;
+        this.y = Math.random() * canvas!.height;
+        this.originX = x;
+        this.originY = y;
+        this.color = color;
+        this.size = gap - 1; // Slightly smaller than gap for grid effect
+        this.vx = 0;
+        this.vy = 0;
+        this.friction = 0.85; // Lower friction for smoother slide
+        this.ease = 0.08; // Lower ease for softer return
+      }
+
+      update(mouseX: number, mouseY: number) {
+        const dx = mouseX - this.x;
+        const dy = mouseY - this.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        // --- MODIFIED PHYSICS LOGIC ---
+        if (distance < mouseRadius) {
+          const angle = Math.atan2(dy, dx);
+          // Force is stronger when closer, zero at the edge of radius
+          const force = (mouseRadius - distance) / mouseRadius;
+          const push = force * 15; // Gentle push strength
+
+          this.vx -= Math.cos(angle) * push;
+          this.vy -= Math.sin(angle) * push;
+
+          // Trigger sound if particle is significantly disturbed
+          if (force > 0.5) {
+            playStaticSound();
+          }
+        }
+
+        this.x += (this.vx *= this.friction) + (this.originX - this.x) * this.ease;
+        this.y += (this.vy *= this.friction) + (this.originY - this.y) * this.ease;
+      }
+
+      draw(context: CanvasRenderingContext2D) {
+        context.fillStyle = this.color;
+        context.fillRect(this.x, this.y, this.size, this.size);
+      }
+    }
+
+    let particles: Particle[] = [];
+
+    // Initialize Text & Particles
+    const init = () => {
+      particles = [];
+      ctx.fillStyle = "white";
+      ctx.font = `900 ${fontSize}px sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (let y = 0; y < canvas.height; y += gap) {
+        for (let x = 0; x < canvas.width; x += gap) {
+          const index = (y * canvas.width + x) * 4;
+          const alpha = data[index + 3];
+
+          if (alpha > 0) {
+            const isTop = y < canvas.height / 2;
+            const color = isTop ? THEME.colors.mutantOrange : "#FFCC00";
+            particles.push(new Particle(x, y, color));
+          }
+        }
+      }
+    };
+
+    init();
+
+    let animationFrameId: number;
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach((particle) => {
+        particle.update(mousePos.x, mousePos.y);
+        particle.draw(ctx);
+      });
+      animationFrameId = requestAnimationFrame(animate);
+    };
+    animate();
+
+    window.addEventListener("resize", () => {
+      resize();
+      init();
+    });
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      window.removeEventListener("resize", resize);
+    };
+  }, [mousePos]);
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (rect) {
+      setMousePos({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+      });
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setMousePos({ x: -1000, y: -1000 });
+  };
+
+  return (
+    <div
+      ref={containerRef}
+      className="w-full h-[250px] flex items-center justify-center overflow-hidden relative z-20"
+    >
+      <canvas
+        ref={canvasRef}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        className="cursor-crosshair touch-none"
+        style={{ width: "100%", height: "100%" }}
+      />
+    </div>
+  );
 };
 
 // --- SUB-COMPONENT: MORTUS HAND WRITER ---
@@ -93,6 +308,7 @@ const Home: React.FC = () => {
   const { dir } = useLanguage(); // Removed unused 't' and 'lang'
   const [pageTurn, setPageTurn] = useState(false);
   const [clickPos, setClickPos] = useState<{ x: number; y: number } | null>(null);
+  const [showComixZone, setShowComixZone] = useState(false);
 
   const handleClick = (e: React.MouseEvent) => {
     // Prevent click effect on interactive elements to avoid visual clutter
@@ -188,19 +404,19 @@ const Home: React.FC = () => {
             <div className="absolute inset-0 opacity-30 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]"></div>
 
             {/* Narrator Box */}
-            <div className="absolute top-2 left-2 md:top-4 md:left-4 bg-[#FFCC00] border-2 border-black p-1 md:p-2 shadow-[2px_2px_0_#000] md:shadow-[4px_4px_0_#000] transform -rotate-2 max-w-[80%]">
+            <div className="absolute top-2 left-2 md:top-4 md:left-4 bg-[#FFCC00] border-2 border-black p-1 md:p-2 shadow-[2px_2px_0_#000] md:shadow-[4px_4px_0_#000] transform -rotate-2 max-w-[80%] z-30">
               <p className="text-black font-bold text-xs md:text-sm uppercase tracking-widest">
                 گروه توسعه و آموزش ادبیات الکترونیک فارسی
               </p>
             </div>
 
-            {/* Main Title - Responsive Text */}
-            <h1 className="mt-8 md:mt-0 text-5xl md:text-7xl lg:text-9xl font-black text-transparent bg-clip-text bg-gradient-to-b from-[#E07000] to-[#FFCC00] drop-shadow-[3px_3px_0_#000] md:drop-shadow-[4px_4px_0_#000] transform -skew-x-12 z-10 text-center leading-tight">
-              کدبیات
-            </h1>
+            {/* --- REPLACED TITLE WITH PIXEL INTERACTIVE COMPONENT --- */}
+            <div className="mt-8 md:mt-0 w-full max-w-3xl transform -skew-x-6 z-20">
+              <PixelTitle />
+            </div>
 
             {/* Speech Bubble */}
-            <div className="mt-6 md:mt-8 bg-white text-black p-4 md:p-6 rounded-[2rem] relative max-w-[90%] md:max-w-md text-center border-4 border-black shadow-[6px_6px_0_rgba(0,0,0,0.5)]">
+            <div className="mt-2 md:mt-4 bg-white text-black p-4 md:p-6 rounded-[2rem] relative max-w-[90%] md:max-w-md text-center border-4 border-black shadow-[6px_6px_0_rgba(0,0,0,0.5)] z-30">
               <p className="text-base md:text-xl font-bold font-mono leading-tight">
                 <MortusWriter
                   text="به دنیای کدبیات خوش آمدی! اینجا جایی است که ادبیات و کدنویسی به هم می‌رسند..."
@@ -322,7 +538,10 @@ const Home: React.FC = () => {
 
       {/* --- COMIX ZONE GIF DECORATIONS (HIDDEN ON MOBILE) --- */}
       <div className="hidden lg:block fixed bottom-20 left-20 z-0 opacity-90 group hover:opacity-100 transition-opacity">
-        <div className="relative transform hover:scale-110 transition-transform duration-300">
+        <div
+          className="relative transform hover:scale-110 transition-transform duration-300 cursor-pointer"
+          onClick={() => setShowComixZone(true)}
+        >
           <div className="absolute -inset-2 bg-white border-4 border-black transform -rotate-2 shadow-[8px_8px_0px_rgba(0,0,0,1)]"></div>
           <div className="relative bg-black border-4 border-white p-1">
             <img
@@ -333,7 +552,7 @@ const Home: React.FC = () => {
             />
           </div>
           <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-white border-2 border-black px-3 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-[4px_4px_0px_rgba(0,0,0,1)]">
-            <span className="text-xs font-black text-black">FIGHT!</span>
+            <span className="text-xs font-black text-black">PLAY!</span>
             <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-r-2 border-b-2 border-black transform rotate-45"></div>
           </div>
         </div>
@@ -358,6 +577,9 @@ const Home: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Comix Zone Game Modal */}
+      {showComixZone && <ComixZoneGame onClose={() => setShowComixZone(false)} />}
     </div>
   );
 };

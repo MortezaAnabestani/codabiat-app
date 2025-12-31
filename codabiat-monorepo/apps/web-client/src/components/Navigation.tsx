@@ -59,7 +59,7 @@ const Navigation: React.FC = () => {
               <div className="absolute inset-0 bg-yellow-400 opacity-0 group-hover:opacity-100 transition-opacity" />
               <Terminal size={24} className="text-black relative z-10" strokeWidth={3} />
               {/* Halftone Pattern Overlay */}
-              <div className="absolute inset-0 opacity-20  bg-[url('https://www.transparenttextures.com/patterns/black-scales.png')]" />
+              <div className="absolute inset-0 opacity-20 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/black-scales.png')]" />
             </div>
 
             <div className="flex flex-col leading-none hidden md:block">
@@ -125,6 +125,7 @@ const Navigation: React.FC = () => {
               );
             })}
           </div>
+
           {/* --- RIGHT CONTROLS (THE OPTIONS MENU) --- */}
           <div className="flex items-center gap-4">
             {/* Language Toggle (Pixel Switch) */}
@@ -157,11 +158,11 @@ const Navigation: React.FC = () => {
       {/* --- MOBILE PAUSE MENU (COMIC OVERLAY) --- */}
       <div
         className={`fixed inset-0 z-[110] bg-[#500050] transition-all duration-500 lg:hidden flex flex-col ${
-          isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 "
+          isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
       >
         {/* Background Texture */}
-        <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] "></div>
+        <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] pointer-events-none"></div>
 
         <div className="relative z-10 flex flex-col items-center justify-center h-full gap-6 p-8">
           <button
