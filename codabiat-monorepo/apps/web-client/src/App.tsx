@@ -30,6 +30,8 @@ import SeriesPage from "./pages/SeriesPage";
 import WriterDashboard from "./pages/WriterDashboard";
 import ArticleEditor from "./pages/ArticleEditor";
 import SeriesManager from "./pages/SeriesManager";
+import SearchPage from "./pages/SearchPage";
+import RecommendationsPage from "./pages/RecommendationsPage";
 
 const App: React.FC = () => {
   return (
@@ -80,6 +82,10 @@ const App: React.FC = () => {
               <Route path="/writer/new-article" element={<ArticleEditor />} />
               <Route path="/writer/edit/:id" element={<ArticleEditor />} />
               <Route path="/writer/series" element={<SeriesManager />} />
+
+              {/* Search & Recommendations Routes */}
+              <Route path="/search" element={<SearchPage />} />
+              <Route path="/recommendations" element={<RecommendationsPage />} />
 
               {/* Protected Routes */}
               <Route

@@ -15,6 +15,8 @@ import {
   Image,
   User,
   LogOut,
+  Search,
+  Sparkles,
 } from "lucide-react";
 import { useLanguage } from "../LanguageContext";
 import { useAuth } from "../contexts/AuthContext";
@@ -150,6 +152,24 @@ const Navigation: React.FC = () => {
 
           {/* --- RIGHT CONTROLS (THE OPTIONS MENU) --- */}
           <div className="flex items-center gap-4">
+            {/* Search Button */}
+            <Link
+              to="/search"
+              className="hidden md:flex items-center justify-center w-10 h-10 bg-cyan-500 border-2 border-black hover:bg-cyan-600 transition-colors shadow-[2px_2px_0_#000]"
+            >
+              <Search size={20} className="text-white" strokeWidth={2.5} />
+            </Link>
+
+            {/* Recommendations Button */}
+            {isAuthenticated && (
+              <Link
+                to="/recommendations"
+                className="hidden md:flex items-center justify-center w-10 h-10 bg-purple-500 border-2 border-black hover:bg-purple-600 transition-colors shadow-[2px_2px_0_#000]"
+              >
+                <Sparkles size={20} className="text-white" strokeWidth={2.5} />
+              </Link>
+            )}
+
             {/* Language Toggle (Pixel Switch) */}
             <button
               onClick={() => setLang(lang === "fa" ? "en" : "fa")}
