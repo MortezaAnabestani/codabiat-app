@@ -19,6 +19,17 @@ import AuthPage from "./pages/AuthPage";
 import GlossaryPage from "./pages/GlossaryPage";
 import GalleryPage from "./pages/GalleryPage";
 import ArtworkDetailPage from "./pages/ArtworkDetailPage";
+import CoursesPage from "./pages/CoursesPage";
+import CourseDetailPage from "./pages/CourseDetailPage";
+import CertificatesPage from "./pages/CertificatesPage";
+import ArticlesPage from "./pages/ArticlesPage";
+import ArticleDetailPage from "./pages/ArticleDetailPage";
+import BookmarksPage from "./pages/BookmarksPage";
+import ReadLaterPage from "./pages/ReadLaterPage";
+import SeriesPage from "./pages/SeriesPage";
+import WriterDashboard from "./pages/WriterDashboard";
+import ArticleEditor from "./pages/ArticleEditor";
+import SeriesManager from "./pages/SeriesManager";
 
 const App: React.FC = () => {
   return (
@@ -51,6 +62,24 @@ const App: React.FC = () => {
               <Route path="/learn/:courseId" element={<LessonPage />} />
               <Route path="/learn/:courseId/lesson/:lessonId" element={<LessonPage />} />
               <Route path="/article/:id" element={<ArticleReader />} />
+
+              {/* Courses Routes */}
+              <Route path="/courses" element={<CoursesPage />} />
+              <Route path="/courses/:id" element={<CourseDetailPage />} />
+              <Route path="/certificates" element={<CertificatesPage />} />
+
+              {/* Blog/Articles Routes */}
+              <Route path="/articles" element={<ArticlesPage />} />
+              <Route path="/articles/:id" element={<ArticleDetailPage />} />
+              <Route path="/series/:slug" element={<SeriesPage />} />
+              <Route path="/bookmarks" element={<BookmarksPage />} />
+              <Route path="/readlater" element={<ReadLaterPage />} />
+
+              {/* Writer/CMS Routes */}
+              <Route path="/writer/dashboard" element={<WriterDashboard />} />
+              <Route path="/writer/new-article" element={<ArticleEditor />} />
+              <Route path="/writer/edit/:id" element={<ArticleEditor />} />
+              <Route path="/writer/series" element={<SeriesManager />} />
 
               {/* Protected Routes */}
               <Route

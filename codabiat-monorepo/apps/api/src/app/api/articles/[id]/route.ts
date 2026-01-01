@@ -17,6 +17,7 @@ export async function GET(
 
     const article = await Article.findById(params.id)
       .populate('author', 'name email avatar')
+      .populate('series', 'title slug description')
       .lean();
 
     if (!article) {
@@ -27,11 +28,29 @@ export async function GET(
       return handleCors(response);
     }
 
+    // Increment view count
     await Article.findByIdAndUpdate(params.id, { $inc: { viewCount: 1 } });
+
+    // Get related articles in the same series
+    let relatedArticles = [];
+    if (article.series) {
+      relatedArticles = await Article.find({
+        series: article.series,
+        _id: { $ne: params.id },
+        published: true,
+      })
+        .populate('author', 'name email avatar')
+        .sort({ seriesOrder: 1, createdAt: 1 })
+        .limit(5)
+        .lean();
+    }
 
     const response = NextResponse.json({
       success: true,
-      data: article,
+      data: {
+        article,
+        relatedArticles,
+      },
     });
     return handleCors(response);
   } catch (error) {
@@ -67,11 +86,19 @@ export const PUT = withAuth(async (req, { params }: { params: { id: string } }) 
     }
 
     const body = await req.json();
+
+    // If publishing for the first time, set publishedAt
+    if (body.published && !article.published) {
+      body.publishedAt = new Date();
+    }
+
     const updatedArticle = await Article.findByIdAndUpdate(
       params.id,
       { $set: body },
       { new: true, runValidators: true }
-    ).populate('author', 'name email avatar');
+    )
+      .populate('author', 'name email avatar')
+      .populate('series', 'title slug');
 
     const response = NextResponse.json({
       success: true,

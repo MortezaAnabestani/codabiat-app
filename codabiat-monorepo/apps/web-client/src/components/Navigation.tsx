@@ -49,11 +49,13 @@ const Navigation: React.FC = () => {
   const navItems = [
     { path: "/", icon: Terminal, label: t("home"), slot: 1 },
     { path: "/learn", icon: GraduationCap, label: t("learn"), slot: 2 },
-    { path: "/glossary", icon: Book, label: t("glossary"), slot: 3 },
-    { path: "/archive", icon: BookOpen, label: t("archive"), slot: 4 },
-    { path: "/lab", icon: Cpu, label: t("lab"), slot: 5 },
-    { path: "/gallery", icon: Image, label: "نمایشگاه", slot: 6 },
-    { path: "/about", icon: Info, label: t("about"), slot: 7 },
+    { path: "/courses", icon: BookOpen, label: "دوره‌ها", slot: 3 },
+    { path: "/articles", icon: Book, label: "مجله", slot: 4 },
+    { path: "/glossary", icon: Book, label: t("glossary"), slot: 5 },
+    { path: "/archive", icon: BookOpen, label: t("archive"), slot: 6 },
+    { path: "/lab", icon: Cpu, label: t("lab"), slot: 7 },
+    { path: "/gallery", icon: Image, label: "نمایشگاه", slot: 8 },
+    { path: "/about", icon: Info, label: t("about"), slot: 9 },
   ];
 
   return (

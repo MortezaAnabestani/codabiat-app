@@ -4,14 +4,22 @@ export interface IArticle extends Document {
   _id: mongoose.Types.ObjectId;
   title: string;
   titleEn: string;
+  excerpt: string;
   content: string;
   contentEn: string;
   author: mongoose.Types.ObjectId;
   category: string;
   tags: string[];
+  series?: mongoose.Types.ObjectId;
+  seriesOrder?: number;
   coverImage?: string;
   published: boolean;
+  publishedAt?: Date;
+  featured: boolean;
+  readTime: number; // minutes
   viewCount: number;
+  likeCount: number;
+  bookmarkCount: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -26,6 +34,11 @@ const ArticleSchema: Schema<IArticle> = new Schema(
     titleEn: {
       type: String,
       trim: true,
+    },
+    excerpt: {
+      type: String,
+      required: true,
+      maxlength: 300,
     },
     content: {
       type: String,
@@ -48,6 +61,13 @@ const ArticleSchema: Schema<IArticle> = new Schema(
       type: String,
       trim: true,
     }],
+    series: {
+      type: Schema.Types.ObjectId,
+      ref: 'ArticleSeries',
+    },
+    seriesOrder: {
+      type: Number,
+    },
     coverImage: {
       type: String,
     },
@@ -55,7 +75,26 @@ const ArticleSchema: Schema<IArticle> = new Schema(
       type: Boolean,
       default: false,
     },
+    publishedAt: {
+      type: Date,
+    },
+    featured: {
+      type: Boolean,
+      default: false,
+    },
+    readTime: {
+      type: Number,
+      default: 5,
+    },
     viewCount: {
+      type: Number,
+      default: 0,
+    },
+    likeCount: {
+      type: Number,
+      default: 0,
+    },
+    bookmarkCount: {
       type: Number,
       default: 0,
     },
