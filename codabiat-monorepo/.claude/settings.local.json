@@ -9,7 +9,17 @@
       "Bash(pnpm --version:*)",
       "Bash(tasklist:*)",
       "Bash(mkdir:*)",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "Bash(pnpm run type-check:*)",
+      "Bash(pnpm exec tsc:*)",
+      "Bash(npx tsc:*)",
+      "Bash(pnpm add:*)",
+      "Bash(npm run build:*)",
+      "Bash(node:*)",
+      "Bash(pnpm --filter @codabiat-monorepo/web-client exec tsc:*)",
+      "Bash(pnpm --filter @codabiat/database build:*)",
+      "Bash(npx tsx scripts/create-admin.ts)",
+      "Bash(curl:*)"
     ]
   }
 }

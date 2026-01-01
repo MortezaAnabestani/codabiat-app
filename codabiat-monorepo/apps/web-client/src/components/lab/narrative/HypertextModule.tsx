@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import { GitBranch, RotateCcw, Map, MousePointer2, Zap, Skull } from "lucide-react";
+import { GitBranch, RotateCcw, Map, MousePointer2, Zap, Skull, Save } from "lucide-react";
+import SaveArtworkDialog from "../SaveArtworkDialog";
 
 // --- Design System Constants ---
 const PALETTE = {
@@ -304,6 +305,9 @@ export const HypertextModule: React.FC = () => {
   // Animation trigger state
   const [pageTurn, setPageTurn] = useState(false);
 
+  // Save dialog state
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+
   const handleLinkClick = (keyword: string) => {
     // Trigger Page Turn Animation
     setPageTurn(true);
@@ -396,6 +400,24 @@ export const HypertextModule: React.FC = () => {
             )}
           </div>
         </div>
+
+        {/* Save Button */}
+        <div className="mt-4 max-w-2xl mx-auto px-4">
+          <button
+            onClick={() => setShowSaveDialog(true)}
+            disabled={history.length <= 1}
+            className={`w-full py-4 font-black text-sm uppercase border-4 border-black shadow-[4px_4px_0px_#000] flex items-center justify-center gap-3 transition-all
+              ${
+                history.length > 1
+                  ? "bg-[#006000] text-white hover:bg-[#007000] active:translate-y-1 active:shadow-none"
+                  : "bg-gray-400 text-gray-600 cursor-not-allowed"
+              }
+            `}
+          >
+            <Save size={20} />
+            SAVE ARTWORK
+          </button>
+        </div>
       </div>
 
       {/* Right Panel: Inventory / Status (Game UI) */}
@@ -441,6 +463,30 @@ export const HypertextModule: React.FC = () => {
         </div>
 
       </div>
+
+      {/* Save Artwork Dialog */}
+      <SaveArtworkDialog
+        isOpen={showSaveDialog}
+        onClose={() => setShowSaveDialog(false)}
+        labModule="hypertext"
+        labCategory="narrative"
+        content={{
+          text: history.map(nodeId => storyNodes[nodeId]?.text || "").join("\n\n"),
+          html: history.map(nodeId => `<div class="story-node" data-id="${nodeId}">${storyNodes[nodeId]?.text || ""}</div>`).join("\n"),
+          data: {
+            nodes: history.map(nodeId => storyNodes[nodeId]),
+            links: history.slice(1).map((nodeId, index) => ({
+              source: history[index],
+              target: nodeId
+            })),
+            structure: {
+              currentNodeId,
+              totalNodes: history.length,
+              visitedNodes: Array.from(new Set(history))
+            }
+          }
+        }}
+      />
     </div>
   );
 };

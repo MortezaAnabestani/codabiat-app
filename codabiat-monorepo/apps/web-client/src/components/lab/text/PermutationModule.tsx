@@ -14,6 +14,7 @@ import {
   Pin,
   MousePointer2,
 } from "lucide-react";
+import SaveArtworkDialog from "../SaveArtworkDialog";
 
 interface PermutationItem {
   id: number;
@@ -31,6 +32,7 @@ export const PermutationModule: React.FC = () => {
   const [pageSize, setPageSize] = useState(24);
   const [currentPage, setCurrentPage] = useState(1);
   const [filter, setFilter] = useState<string>("");
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
 
   const words = useMemo(
     () =>
@@ -183,6 +185,22 @@ export const PermutationModule: React.FC = () => {
                 <span className="text-2xl">POW!</span>
               )}
               {isProcessing ? "SKETCHING..." : "GENERATE"}
+            </button>
+
+            {/* Save Artwork Button */}
+            <button
+              onClick={() => setShowSaveDialog(true)}
+              disabled={items.length === 0}
+              className={`w-full py-3 mt-4 font-black text-sm uppercase border-4 border-black shadow-[4px_4px_0px_#000] flex items-center justify-center gap-2 transition-all
+                          ${
+                            items.length > 0
+                              ? "bg-[#006000] text-white hover:bg-[#007000] active:translate-y-1 active:shadow-none"
+                              : "bg-gray-400 text-gray-600 cursor-not-allowed"
+                          }
+                      `}
+            >
+              <Save size={20} />
+              SAVE ARTWORK
             </button>
           </div>
 
@@ -403,6 +421,38 @@ export const PermutationModule: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Save Artwork Dialog */}
+      <SaveArtworkDialog
+        isOpen={showSaveDialog}
+        onClose={() => setShowSaveDialog(false)}
+        labModule="permutation"
+        labCategory="text"
+        content={{
+          text: items.map((item) => item.text).join("\n"),
+          html: `<div style="font-family: monospace; padding: 20px;">${items
+            .map(
+              (item, i) =>
+                `<div style="margin-bottom: 10px; padding: 10px; background: ${
+                  item.pinned ? "#fffacd" : "#f5f5f5"
+                }; border-left: 3px solid ${item.pinned ? "#E07000" : "#ccc"};">
+                  <strong>${i + 1}.</strong> ${item.text}
+                </div>`
+            )
+            .join("")}</div>`,
+          data: {
+            originalInput: input,
+            totalPermutations: items.length,
+            words,
+            pageSize,
+            permutations: items.map((item) => ({
+              text: item.text,
+              entropy: item.entropy,
+              pinned: item.pinned,
+            })),
+          },
+        }}
+      />
     </div>
   );
 };

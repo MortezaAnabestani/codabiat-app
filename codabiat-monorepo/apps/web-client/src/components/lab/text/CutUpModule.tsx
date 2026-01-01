@@ -12,7 +12,9 @@ import {
   Zap,
   Hand,
   Skull,
+  Save,
 } from "lucide-react";
+import SaveArtworkDialog from "../SaveArtworkDialog";
 
 interface Fragment {
   id: number;
@@ -50,6 +52,7 @@ export const CutUpModule: React.FC = () => {
   const [gravity, setGravity] = useState(0.5);
   const [chaos, setChaos] = useState(5);
   const [isSimulating, setIsSimulating] = useState(true);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
 
   // Comic/Pixel Fonts
   const fonts = ["Courier New", "monospace", "Tahoma", "Arial Black"];
@@ -403,6 +406,22 @@ export const CutUpModule: React.FC = () => {
               </div>
             </button>
           </div>
+
+          {/* Save Artwork Button */}
+          <button
+            onClick={() => setShowSaveDialog(true)}
+            disabled={fragmentsRef.current.length === 0}
+            className={`w-full py-3 font-black text-sm uppercase border-4 border-black shadow-[4px_4px_0px_#000] flex items-center justify-center gap-2 transition-all mt-4
+                        ${
+                          fragmentsRef.current.length > 0
+                            ? "bg-[#006000] text-white hover:bg-[#007000] active:translate-y-1 active:shadow-none"
+                            : "bg-gray-600 text-gray-400 cursor-not-allowed"
+                        }
+                    `}
+          >
+            <Save size={20} />
+            SAVE ARTWORK
+          </button>
         </div>
       </div>
 
@@ -447,6 +466,35 @@ export const CutUpModule: React.FC = () => {
         {/* Decorative "Gutter" Shadow on the left edge of canvas */}
         <div className="absolute left-0 top-0 bottom-0 w-4 bg-gradient-to-r from-black/20 to-transparent " />
       </div>
+
+      {/* Save Artwork Dialog */}
+      <SaveArtworkDialog
+        isOpen={showSaveDialog}
+        onClose={() => setShowSaveDialog(false)}
+        labModule="cut-up"
+        labCategory="text"
+        content={{
+          text: fragmentsRef.current.map((f) => f.text).join(" "),
+          html: `<div style="font-family: monospace; padding: 20px;">${fragmentsRef.current
+            .map((f) => `<span style="display: inline-block; margin: 5px;">${f.text}</span>`)
+            .join("")}</div>`,
+          data: {
+            originalText: text,
+            mode,
+            gravity,
+            chaos,
+            fragments: fragmentsRef.current.map((f) => ({
+              text: f.text,
+              x: f.x,
+              y: f.y,
+              angle: f.angle,
+              fontSize: f.fontSize,
+              fontFamily: f.fontFamily,
+            })),
+          },
+        }}
+        screenshot={canvasRef.current?.toDataURL("image/png")}
+      />
     </div>
   );
 };

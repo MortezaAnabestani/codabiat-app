@@ -13,7 +13,9 @@ import {
   Radio,
   Waves,
   Repeat,
+  Save,
 } from "lucide-react";
+import SaveArtworkDialog from "../SaveArtworkDialog";
 
 interface SynthSettings {
   waveType: OscillatorType;
@@ -30,6 +32,7 @@ interface SynthSettings {
 export const SonificationModule: React.FC = () => {
   const [text, setText] = useState("نوسانِ کلمات در خلأ");
   const [isPlaying, setIsPlaying] = useState(false);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [settings, setSettings] = useState<SynthSettings>({
     waveType: "sine",
     attack: 0.1,
@@ -397,6 +400,22 @@ export const SonificationModule: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* Save Artwork Button */}
+          <button
+            onClick={() => setShowSaveDialog(true)}
+            disabled={!text}
+            className={`w-full py-4 font-black text-sm uppercase border-4 border-black shadow-[4px_4px_0px_#000] flex items-center justify-center gap-3 transition-all
+                ${
+                  text
+                    ? "bg-[#006000] text-white hover:bg-[#007000] active:translate-y-1 active:shadow-none"
+                    : "bg-gray-400 text-gray-600 cursor-not-allowed"
+                }
+            `}
+          >
+            <Save size={20} />
+            SAVE ARTWORK
+          </button>
         </div>
 
         {/* [PANEL 2] Right: Visualization (The Main Frame) */}
@@ -485,6 +504,23 @@ export const SonificationModule: React.FC = () => {
             background: #000;
         }
       `}</style>
+
+      {/* Save Artwork Dialog */}
+      <SaveArtworkDialog
+        isOpen={showSaveDialog}
+        onClose={() => setShowSaveDialog(false)}
+        labModule="sonification"
+        labCategory="visual"
+        content={{
+          text: text,
+          data: {
+            text: text,
+            audioSettings: settings,
+            waveform: settings.waveType,
+            duration: text.length * 0.25 + 1,
+          },
+        }}
+      />
     </div>
   );
 };

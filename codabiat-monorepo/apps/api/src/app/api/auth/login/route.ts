@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase, User } from '@codabiat/database';
 import { verifyPassword, generateToken } from '@codabiat/auth';
+import { handleCors, handleOptions } from '../../../../lib/cors';
+
+export async function OPTIONS() {
+  return handleOptions();
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,26 +15,29 @@ export async function POST(req: NextRequest) {
     const { email, password } = body;
 
     if (!email || !password) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { error: 'Missing email or password' },
         { status: 400 }
       );
+      return handleCors(response);
     }
 
     const user = await User.findOne({ email });
     if (!user) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { error: 'Invalid credentials' },
         { status: 401 }
       );
+      return handleCors(response);
     }
 
     const isValidPassword = await verifyPassword(password, user.password);
     if (!isValidPassword) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { error: 'Invalid credentials' },
         { status: 401 }
       );
+      return handleCors(response);
     }
 
     const token = generateToken({
@@ -38,7 +46,7 @@ export async function POST(req: NextRequest) {
       role: user.role,
     });
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       user: {
         id: user._id,
@@ -46,14 +54,23 @@ export async function POST(req: NextRequest) {
         name: user.name,
         role: user.role,
         avatar: user.avatar,
+        bio: user.bio,
+        xp: user.xp || 0,
+        level: user.level || 1,
+        badges: user.badges || [],
+        artworksCount: 0,
+        followersCount: 0,
+        followingCount: 0,
       },
       token,
     });
+    return handleCors(response);
   } catch (error) {
     console.error('Login error:', error);
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
     );
+    return handleCors(response);
   }
 }

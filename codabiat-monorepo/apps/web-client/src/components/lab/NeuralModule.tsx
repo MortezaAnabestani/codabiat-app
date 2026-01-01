@@ -16,6 +16,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { generateStreamingContent, GenerationSettings } from "../../services/geminiService";
+import SaveArtworkDialog from "./SaveArtworkDialog";
 
 // --- COMIX ZONE PALETTE CONSTANTS ---
 const COLORS = {
@@ -57,6 +58,7 @@ export const NeuralModule: React.FC = () => {
   const [result, setResult] = useState("");
   const [loading, setLoading] = useState(false);
   const [logs, setLogs] = useState<string[]>(["[SEGA] SYSTEM_READY", "[MORTUS] WAITING_FOR_INK"]);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
 
   // Settings
   const [config, setConfig] = useState<GenerationSettings>({
@@ -169,6 +171,20 @@ export const NeuralModule: React.FC = () => {
             )}
             <span className="absolute -bottom-6 text-[8px] text-white bg-black px-1 opacity-0 group-hover:opacity-100">
               ACTION
+            </span>
+          </button>
+
+          {/* Slot 3: Save Artwork */}
+          <button
+            onClick={() => setShowSaveDialog(true)}
+            disabled={!result}
+            className={`group relative w-12 h-12 border-4 border-black flex items-center justify-center transition-all active:scale-95
+                    ${result ? "bg-[#006000] hover:bg-white" : "bg-gray-600 cursor-not-allowed"}`}
+            title="Save Artwork"
+          >
+            <Save size={24} className={result ? "text-white group-hover:text-black" : "text-gray-400"} />
+            <span className="absolute -bottom-6 text-[8px] text-white bg-black px-1 opacity-0 group-hover:opacity-100">
+              SAVE
             </span>
           </button>
         </div>
@@ -407,6 +423,25 @@ export const NeuralModule: React.FC = () => {
           background: #fff;
         }
       `}</style>
+
+      {/* Save Artwork Dialog */}
+      <SaveArtworkDialog
+        isOpen={showSaveDialog}
+        onClose={() => setShowSaveDialog(false)}
+        labModule="neural"
+        labCategory="other"
+        content={{
+          text: result,
+          data: {
+            input: prompt,
+            settings: config,
+            model: config.model,
+            temperature: config.temperature,
+            thinkingBudget: config.thinkingBudget,
+            output: result,
+          },
+        }}
+      />
     </div>
   );
 };

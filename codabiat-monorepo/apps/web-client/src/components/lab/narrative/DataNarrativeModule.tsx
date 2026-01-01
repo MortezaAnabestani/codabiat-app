@@ -19,7 +19,9 @@ import {
   Skull, // Added for "Mutant" theme
   Hand, // Added for "Mortus Hand" metaphor
   Edit3, // Added for "Artist" metaphor
+  Save, // Added for Save functionality
 } from "lucide-react";
+import SaveArtworkDialog from "../SaveArtworkDialog";
 
 // --- Types ---
 interface DataChannel {
@@ -157,6 +159,7 @@ export const DataNarrativeModule: React.FC = () => {
   const [story, setStory] = useState("");
   const [loading, setLoading] = useState(false);
   const [fetchedVerse, setFetchedVerse] = useState<{ verse: string; poet: string } | null>(null);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
 
   const addLog = (msg: string) => {
     setSynthesisLogs((prev) => [`> ${msg}`, ...prev].slice(0, 8));
@@ -337,6 +340,20 @@ export const DataNarrativeModule: React.FC = () => {
               <Hand size={24} className="transform rotate-90" />
             </div>
           </button>
+
+          {/* SAVE BUTTON */}
+          <button
+            onClick={() => setShowSaveDialog(true)}
+            disabled={!story}
+            className={`w-full py-4 font-black text-sm uppercase border-4 border-black shadow-[4px_4px_0px_#000] flex items-center justify-center gap-3 transition-all ${
+              story
+                ? "bg-[#006000] text-white hover:bg-[#007000] active:translate-y-1 active:shadow-none"
+                : "bg-gray-400 text-gray-600 cursor-not-allowed"
+            }`}
+          >
+            <Save size={20} />
+            SAVE ARTWORK
+          </button>
         </div>
 
         {/* CENTER PANEL: THE COMIC PAGE */}
@@ -471,6 +488,30 @@ export const DataNarrativeModule: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Save Artwork Dialog */}
+      <SaveArtworkDialog
+        isOpen={showSaveDialog}
+        onClose={() => setShowSaveDialog(false)}
+        labModule="data-narrative"
+        labCategory="narrative"
+        content={{
+          text: story,
+          html: `<div class="data-narrative-story">${story}</div>`,
+          data: {
+            dataset: channels.reduce((acc: any, ch) => {
+              acc[ch.id] = { value: ch.value, label: ch.label };
+              return acc;
+            }, {}),
+            narrative: story,
+            visualizations: {
+              radarData: channels.map((ch) => ({ id: ch.id, value: ch.value, type: ch.type })),
+              entropyLevel,
+              ganjoorVerse: fetchedVerse,
+            },
+          },
+        }}
+      />
     </div>
   );
 };

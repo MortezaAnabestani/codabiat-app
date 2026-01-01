@@ -10,7 +10,9 @@ import {
   Circle,
   PenTool,
   Hand,
+  Save,
 } from "lucide-react";
+import SaveArtworkDialog from "../SaveArtworkDialog";
 
 interface Particle {
   x: number;
@@ -43,6 +45,7 @@ export const AdvancedKineticModule: React.FC = () => {
   const [connectionDistance, setConnectionDistance] = useState(100);
   const [speed, setSpeed] = useState(1);
   const [showTrails, setShowTrails] = useState(true);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
 
   // Initialization
   const initParticles = useCallback(() => {
@@ -286,6 +289,16 @@ export const AdvancedKineticModule: React.FC = () => {
     mouseRef.current.active = false;
   };
 
+  const canvasToDataURL = () => {
+    if (!canvasRef.current) return undefined;
+    try {
+      return canvasRef.current.toDataURL("image/png");
+    } catch (error) {
+      console.error("Failed to capture canvas:", error);
+      return undefined;
+    }
+  };
+
   return (
     // THE VOID (Artist's Desk Background)
     <div className="h-full  flex flex-col relative overflow-hidden bg-[#500050] p-4 font-mono select-none">
@@ -450,9 +463,43 @@ export const AdvancedKineticModule: React.FC = () => {
                 TRAILS: {showTrails ? "ON" : "OFF"}
               </button>
             </div>
+
+            {/* Save Button */}
+            <button
+              onClick={() => setShowSaveDialog(true)}
+              disabled={particleCount === 0}
+              className={`w-full py-3 border-4 border-black flex items-center justify-center gap-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all text-sm font-black uppercase ${
+                particleCount > 0
+                  ? "bg-emerald-700 text-white active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
+                  : "bg-gray-400 text-gray-600 cursor-not-allowed"
+              }`}
+            >
+              <Save size={20} />
+              SAVE ARTWORK
+            </button>
           </div>
         </div>
       </div>
+
+      {/* Save Artwork Dialog */}
+      <SaveArtworkDialog
+        isOpen={showSaveDialog}
+        onClose={() => setShowSaveDialog(false)}
+        labModule="advanced-kinetic"
+        labCategory="visual"
+        content={{
+          text: text,
+          data: {
+            text: text,
+            mode: mode,
+            particleCount: particleCount,
+            connectionDistance: connectionDistance,
+            speed: speed,
+            showTrails: showTrails,
+          },
+        }}
+        screenshot={canvasToDataURL()}
+      />
     </div>
   );
 };

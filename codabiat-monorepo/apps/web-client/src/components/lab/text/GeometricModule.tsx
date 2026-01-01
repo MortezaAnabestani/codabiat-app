@@ -14,7 +14,9 @@ import {
   Binary,
   Skull, // Added for the "Mortus" feel
   Hand, // Added for the "Hand" mechanic representation
+  Save,
 } from "lucide-react";
+import SaveArtworkDialog from "../SaveArtworkDialog";
 
 type GeoMode = "spiral" | "wave" | "fibonacci" | "mandala";
 
@@ -31,6 +33,7 @@ export const GeometricModule: React.FC = () => {
   const [spacing, setSpacing] = useState(25);
   const [speed, setSpeed] = useState(0.5);
   const [amplitude, setAmplitude] = useState(50);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
 
   // --- Render Logic (Unchanged) ---
   const draw = useCallback(() => {
@@ -337,8 +340,11 @@ export const GeometricModule: React.FC = () => {
               <button className="flex-1 py-3 bg-white border-2 border-black text-xs font-black uppercase hover:bg-gray-100 active:translate-y-1 transition-all flex items-center justify-center gap-2 shadow-[2px_2px_0px_0px_#999]">
                 <Share2 size={14} /> SHARE
               </button>
-              <button className="flex-1 py-3 bg-[#006000] text-white border-2 border-black text-xs font-black uppercase hover:bg-[#008000] active:translate-y-1 transition-all flex items-center justify-center gap-2 shadow-[2px_2px_0px_0px_#000]">
-                <Download size={14} /> SAVE
+              <button
+                onClick={() => setShowSaveDialog(true)}
+                className="flex-1 py-3 bg-[#006000] text-white border-2 border-black text-xs font-black uppercase hover:bg-[#008000] active:translate-y-1 transition-all flex items-center justify-center gap-2 shadow-[2px_2px_0px_0px_#000]"
+              >
+                <Save size={14} /> SAVE
               </button>
             </div>
 
@@ -349,6 +355,28 @@ export const GeometricModule: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Save Artwork Dialog */}
+      <SaveArtworkDialog
+        isOpen={showSaveDialog}
+        onClose={() => setShowSaveDialog(false)}
+        labModule="geometric"
+        labCategory="text"
+        content={{
+          text: text,
+          html: `<div style="width: 100%; height: 100%; background: #2a1a30; font-family: monospace;"><canvas></canvas></div>`,
+          data: {
+            text,
+            settings: {
+              mode,
+              complexity,
+              spacing,
+              speed,
+              amplitude,
+            },
+          },
+        }}
+      />
     </div>
   );
 };

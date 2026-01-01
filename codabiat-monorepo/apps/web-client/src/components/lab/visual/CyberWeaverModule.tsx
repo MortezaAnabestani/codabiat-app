@@ -10,7 +10,9 @@ import {
   Zap,
   LayoutGrid,
   Hand,
+  Save,
 } from "lucide-react";
+import SaveArtworkDialog from "../SaveArtworkDialog";
 
 type CarpetColor = { r: number; g: number; b: number };
 
@@ -27,6 +29,7 @@ export const CyberWeaverModule: React.FC = () => {
   const [colorIntensity, setColorIntensity] = useState(0.8);
   const [isWeaving, setIsWeaving] = useState(false);
   const [renderSeed, setRenderSeed] = useState(0);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
 
   // --- Helper: Generate Color from Char ---
   const getKnotColor = (char: string, intensity: number): string => {
@@ -36,6 +39,13 @@ export const CyberWeaverModule: React.FC = () => {
     const s = 60 + (code % 40);
     const l = 20 + (code % 30) * intensity;
     return `hsl(${h}, ${s}%, ${l}%)`;
+  };
+
+  // --- Helper: Capture Screenshot ---
+  const captureScreenshot = (): string => {
+    const canvas = canvasRef.current;
+    if (!canvas) return "";
+    return canvas.toDataURL("image/png");
   };
 
   // --- Weaving Logic (UNCHANGED FUNCTIONALITY) ---
@@ -281,8 +291,19 @@ export const CyberWeaverModule: React.FC = () => {
             {isWeaving ? "WEAVING..." : "GENERATE!"}
           </button>
 
-          <button className="w-full py-2 bg-[#006000] border-2 border-black text-white text-xs font-bold uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-[#007500] flex items-center justify-center gap-2">
-            <Download size={14} /> SAVE_CARPET_DATA
+          <button
+            onClick={() => setShowSaveDialog(true)}
+            disabled={!inputText || isWeaving}
+            className={`w-full py-4 font-black text-sm uppercase border-4 border-black shadow-[4px_4px_0px_#000] flex items-center justify-center gap-3 transition-all
+              ${
+                inputText && !isWeaving
+                  ? "bg-[#006000] text-white hover:bg-[#007000] active:translate-y-1 active:shadow-none"
+                  : "bg-gray-400 text-gray-600 cursor-not-allowed"
+              }
+          `}
+          >
+            <Save size={20} />
+            SAVE_ARTWORK
           </button>
         </div>
       </div>
@@ -342,6 +363,26 @@ export const CyberWeaverModule: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <SaveArtworkDialog
+        isOpen={showSaveDialog}
+        onClose={() => setShowSaveDialog(false)}
+        labModule="cyber-weaver"
+        labCategory="visual"
+        content={{
+          text: inputText,
+          data: {
+            input: inputText,
+            pattern: symmetryType,
+            settings: {
+              knotDensity,
+              colorIntensity,
+              symmetryType,
+            },
+          },
+        }}
+        screenshot={captureScreenshot()}
+      />
     </div>
   );
 };

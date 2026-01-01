@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
-import { MapPin, Hand, Bomb, Skull, PenTool, X } from "lucide-react";
+import { MapPin, Hand, Bomb, Skull, PenTool, X, Save } from "lucide-react";
 import { generateLocativeContent } from "../../../services/geminiService";
+import SaveArtworkDialog from "../SaveArtworkDialog";
 
 interface NodeLocation {
   id: string;
@@ -18,6 +19,7 @@ export const LocativeNarrativeModule: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [mapReady, setMapReady] = useState(false);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
 
   // Typewriter effect state
   const [displayedText, setDisplayedText] = useState("");
@@ -147,6 +149,16 @@ export const LocativeNarrativeModule: React.FC = () => {
               <MapPin size={24} className="text-black" />
             )}
           </div>
+          {/* Slot 3: Save (Save Artwork) */}
+          <button
+            onClick={() => setShowSaveDialog(true)}
+            disabled={nodes.length === 0}
+            className={`w-12 h-12 border-4 border-black flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-none transition-all ${
+              nodes.length > 0 ? "bg-[#006000] cursor-pointer" : "bg-gray-400 cursor-not-allowed"
+            }`}
+          >
+            <Save size={24} className={nodes.length > 0 ? "text-white" : "text-gray-600"} />
+          </button>
 
           <div className="ml-2">
             <h2 className="text-[#E07000] text-xl font-black tracking-widest uppercase drop-shadow-[2px_2px_0_#000]">
@@ -287,6 +299,45 @@ export const LocativeNarrativeModule: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Save Artwork Dialog */}
+      <SaveArtworkDialog
+        isOpen={showSaveDialog}
+        onClose={() => setShowSaveDialog(false)}
+        labModule="locative-narrative"
+        labCategory="narrative"
+        content={{
+          text: nodes.map((node) => `[${node.lat.toFixed(4)}, ${node.lng.toFixed(4)}]: ${node.story}`).join("\n\n"),
+          html: `<div style="font-family: monospace; padding: 20px;">
+            <h2 style="color: #E07000; font-weight: 900; margin-bottom: 20px;">SEGA_MAPPER - Location-Based Narrative</h2>
+            ${nodes
+              .map(
+                (node) => `
+              <div style="margin-bottom: 30px; border-left: 4px solid #E07000; padding-left: 15px;">
+                <strong style="color: #500050;">Location: ${node.lat.toFixed(4)}, ${node.lng.toFixed(4)}</strong>
+                <br/>
+                <small style="color: #666;">Time: ${node.timestamp}</small>
+                <p style="margin-top: 10px; line-height: 1.6;">${node.story}</p>
+              </div>
+            `
+              )
+              .join("")}
+          </div>`,
+          data: {
+            locations: nodes.map((node) => ({
+              id: node.id,
+              lat: node.lat,
+              lng: node.lng,
+              timestamp: node.timestamp,
+            })),
+            narrative: nodes.map((node) => ({
+              location: `${node.lat.toFixed(4)}, ${node.lng.toFixed(4)}`,
+              story: node.story,
+            })),
+            totalNodes: nodes.length,
+          },
+        }}
+      />
     </div>
   );
 };

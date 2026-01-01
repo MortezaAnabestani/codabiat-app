@@ -15,7 +15,9 @@ import {
   Hand,
   Scroll,
   Eraser,
+  Save,
 } from "lucide-react";
+import SaveArtworkDialog from "../SaveArtworkDialog";
 
 interface DataParticle {
   id: number;
@@ -49,6 +51,7 @@ export const CyberBreachModule: React.FC = () => {
   const [compiledText, setCompiledText] = useState<string[]>([]);
   const [time, setTime] = useState(0);
   const [slowMo, setSlowMo] = useState(false);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
 
   // Game Refs (UNCHANGED)
   const particlesRef = useRef<DataParticle[]>([]);
@@ -180,6 +183,12 @@ export const CyberBreachModule: React.FC = () => {
     setCompiledText([]);
     setTime(0);
     setGameState("running");
+  };
+
+  const captureScreenshot = () => {
+    if (!containerRef.current) return "";
+    // For now, return empty string - can be implemented with html2canvas if needed
+    return "";
   };
 
   // --- UI RENDER (HEAVILY MODIFIED FOR COMIX ZONE STYLE) ---
@@ -321,6 +330,21 @@ export const CyberBreachModule: React.FC = () => {
               <Square size={20} className="fill-white" /> GIVE UP
             </button>
           )}
+
+          <button
+            onClick={() => setShowSaveDialog(true)}
+            disabled={gameState !== "win"}
+            className={`w-full py-4 font-black text-sm uppercase border-4 border-black shadow-[4px_4px_0px_#000] flex items-center justify-center gap-3 transition-all
+                        ${
+                          gameState === "win"
+                            ? "bg-[#006000] text-white hover:bg-[#007000] active:translate-y-1 active:shadow-none"
+                            : "bg-gray-400 text-gray-600 cursor-not-allowed"
+                        }
+                    `}
+          >
+            <Save size={20} />
+            SAVE ARTWORK
+          </button>
         </div>
       </div>
       {/* Right: The Main Panel (The Game) */}
@@ -497,6 +521,23 @@ export const CyberBreachModule: React.FC = () => {
           <Hand size={200} className="text-black opacity-10 rotate-12" />
         </div>
       </div>
+
+      <SaveArtworkDialog
+        isOpen={showSaveDialog}
+        onClose={() => setShowSaveDialog(false)}
+        labModule="cyber-breach"
+        labCategory="visual"
+        content={{
+          text: compiledText.join(" "),
+          data: {
+            score: score,
+            time: time,
+            buffer: buffer,
+            completedWords: compiledText.length,
+          },
+        }}
+        screenshot={captureScreenshot()}
+      />
     </div>
   );
 };

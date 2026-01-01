@@ -1,7 +1,23 @@
 import React, { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { Terminal, BookOpen, Cpu, Info, GraduationCap, Book, Menu, X, Hand, Zap, Skull } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import {
+  Terminal,
+  BookOpen,
+  Cpu,
+  Info,
+  GraduationCap,
+  Book,
+  Menu,
+  X,
+  Hand,
+  Zap,
+  Skull,
+  Image,
+  User,
+  LogOut,
+} from "lucide-react";
 import { useLanguage } from "../LanguageContext";
+import { useAuth } from "../contexts/AuthContext";
 
 // --- COMIX ZONE PALETTE ---
 const COLORS = {
@@ -15,10 +31,13 @@ const COLORS = {
 
 const Navigation: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { lang, setLang, t } = useLanguage();
+  const { user, isAuthenticated, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
   // Scroll Effect: Toggles between "Floating Panel" and "Docked Inventory"
   useEffect(() => {
@@ -33,7 +52,8 @@ const Navigation: React.FC = () => {
     { path: "/glossary", icon: Book, label: t("glossary"), slot: 3 },
     { path: "/archive", icon: BookOpen, label: t("archive"), slot: 4 },
     { path: "/lab", icon: Cpu, label: t("lab"), slot: 5 },
-    { path: "/about", icon: Info, label: t("about"), slot: 6 },
+    { path: "/gallery", icon: Image, label: "نمایشگاه", slot: 6 },
+    { path: "/about", icon: Info, label: t("about"), slot: 7 },
   ];
 
   return (
@@ -136,13 +156,55 @@ const Navigation: React.FC = () => {
               {lang === "fa" ? "EN" : "FA"}
             </button>
 
-            {/* Login (The Key Item) */}
-            <Link
-              to="/login"
-              className="hidden md:flex items-center justify-center w-10 h-10 bg-[#006000] border-2 border-black hover:bg-[#008000] transition-colors shadow-[2px_2px_0_#fff]"
-            >
-              <Skull size={18} className="text-white" />
-            </Link>
+            {/* Login/User Menu (The Key Item) */}
+            {!isAuthenticated ? (
+              <Link
+                to="/login"
+                className="hidden md:flex items-center justify-center w-10 h-10 bg-[#006000] border-2 border-black hover:bg-[#008000] transition-colors shadow-[2px_2px_0_#fff]"
+              >
+                <Skull size={18} className="text-white" />
+              </Link>
+            ) : (
+              <div className="hidden md:block relative">
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="flex items-center gap-2 bg-[#E07000] border-2 border-black px-3 py-2 hover:bg-[#F08000] transition-colors shadow-[2px_2px_0_#000]"
+                >
+                  <div className="w-6 h-6 bg-white border-2 border-black flex items-center justify-center">
+                    <User size={14} className="text-black" />
+                  </div>
+                  <span className="text-xs font-black text-white uppercase">{user?.name}</span>
+                  <span className="text-[10px] font-bold text-yellow-400 bg-black px-1">
+                    LV.{user?.level || 1}
+                  </span>
+                </button>
+
+                {/* User Dropdown Menu */}
+                {showUserMenu && (
+                  <div className="absolute right-0 top-full mt-2 bg-white border-4 border-black shadow-[4px_4px_0_#000] min-w-[200px] z-50">
+                    <Link
+                      to="/dashboard"
+                      onClick={() => setShowUserMenu(false)}
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-yellow-400 border-b-2 border-black transition-colors"
+                    >
+                      <User size={16} className="text-black" />
+                      <span className="text-sm font-bold text-black uppercase">داشبورد</span>
+                    </Link>
+                    <button
+                      onClick={() => {
+                        logout();
+                        setShowUserMenu(false);
+                        navigate("/");
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 bg-red-500 hover:bg-red-600 hover:text-white transition-colors"
+                    >
+                      <LogOut size={16} />
+                      <span className="text-sm font-bold uppercase">خروج</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Mobile Toggle */}
             <button
@@ -193,13 +255,60 @@ const Navigation: React.FC = () => {
             </Link>
           ))}
 
-          <Link
-            to="/login"
-            onClick={() => setIsOpen(false)}
-            className="mt-8 text-sm font-bold text-white uppercase tracking-[0.2em] bg-[#006000] border-2 border-white px-8 py-3 shadow-[4px_4px_0_#000]"
-          >
-            {t("login")}
-          </Link>
+          {/* Mobile Auth Section */}
+          {!isAuthenticated ? (
+            <Link
+              to="/login"
+              onClick={() => setIsOpen(false)}
+              className="mt-8 text-sm font-bold text-white uppercase tracking-[0.2em] bg-[#006000] border-2 border-white px-8 py-3 shadow-[4px_4px_0_#000]"
+            >
+              {t("login")}
+            </Link>
+          ) : (
+            <div className="mt-8 w-full max-w-xs space-y-4">
+              {/* User Info Card */}
+              <div className="bg-[#E07000] border-4 border-black p-4 shadow-[6px_6px_0_#000]">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 bg-white border-2 border-black flex items-center justify-center">
+                    <User size={20} className="text-black" />
+                  </div>
+                  <div>
+                    <p className="text-lg font-black text-white uppercase">{user?.name}</p>
+                    <p className="text-xs font-bold text-yellow-400 bg-black px-2 inline-block">
+                      LEVEL {user?.level || 1} • {user?.xp || 0} XP
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Dashboard Button */}
+              <Link
+                to="/dashboard"
+                onClick={() => setIsOpen(false)}
+                className="w-full bg-white border-4 border-black p-4 flex items-center gap-4 transform hover:scale-105 transition-all shadow-[6px_6px_0_#000]"
+              >
+                <div className="bg-yellow-400 p-2 border-2 border-black">
+                  <User size={24} className="text-black" />
+                </div>
+                <span className="text-xl font-black text-black uppercase">داشبورد</span>
+              </Link>
+
+              {/* Logout Button */}
+              <button
+                onClick={() => {
+                  logout();
+                  setIsOpen(false);
+                  navigate("/");
+                }}
+                className="w-full bg-red-600 border-4 border-black p-4 flex items-center gap-4 transform hover:scale-105 transition-all shadow-[6px_6px_0_#000]"
+              >
+                <div className="bg-white p-2 border-2 border-black">
+                  <LogOut size={24} className="text-black" />
+                </div>
+                <span className="text-xl font-black text-white uppercase">خروج</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </>

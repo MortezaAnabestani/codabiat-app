@@ -11,7 +11,9 @@ import {
   Hand,
   Zap,
   Skull,
+  Save,
 } from "lucide-react";
+import SaveArtworkDialog from "../SaveArtworkDialog";
 
 interface Artifact {
   id: number;
@@ -30,6 +32,7 @@ export const PoetryExcavationModule: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const cursorRef = useRef<{ x: number; y: number }>({ x: -1000, y: -1000 });
   const [stats, setStats] = useState({ density: 0, signal: 0 });
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
 
   const poem =
     "در ازل پرتو حسنت ز تجلی دم زد عشق پیدا شد و آتش به همه عالم زد جلوه‌ای کرد رخت دید ملک عشق نداشت عین آتش شد از این غیرت و بر آدم زد";
@@ -78,6 +81,27 @@ export const PoetryExcavationModule: React.FC = () => {
   const resetExcavation = () => {
     setCollected([]);
     setArtifacts((prev) => prev.map((a) => ({ ...a, discovered: false })));
+  };
+
+  const captureScreenshot = (): string | undefined => {
+    if (!containerRef.current) return undefined;
+
+    try {
+      const canvas = document.createElement("canvas");
+      const rect = containerRef.current.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+      const ctx = canvas.getContext("2d");
+
+      if (!ctx) return undefined;
+
+      // Use html2canvas or similar library in production
+      // For now, return undefined and let the save work without screenshot
+      return undefined;
+    } catch (error) {
+      console.error("Screenshot capture failed:", error);
+      return undefined;
+    }
   };
   // --- END LOGIC ---
 
@@ -186,9 +210,19 @@ export const PoetryExcavationModule: React.FC = () => {
             <span className="text-[10px] font-bold text-white uppercase">RESET</span>
           </button>
 
-          <button className="group relative bg-[#E07000] hover:bg-[#ff8c00] border-4 border-black p-2 flex flex-col items-center justify-center transition-all active:translate-y-1 active:shadow-none shadow-[4px_4px_0px_black]">
+          <button
+            onClick={() => setShowSaveDialog(true)}
+            disabled={collected.length === 0}
+            className={`group relative border-4 border-black p-2 flex flex-col items-center justify-center transition-all active:translate-y-1 active:shadow-none shadow-[4px_4px_0px_black]
+              ${
+                collected.length > 0
+                  ? "bg-[#006000] hover:bg-[#007000]"
+                  : "bg-gray-400 cursor-not-allowed"
+              }
+            `}
+          >
             <div className="bg-white p-1 border-2 border-black mb-1 group-hover:-rotate-12 transition-transform">
-              <Download size={20} className="text-black" />
+              <Save size={20} className="text-black" />
             </div>
             <span className="text-[10px] font-bold text-black uppercase">SAVE</span>
           </button>
@@ -339,6 +373,37 @@ export const PoetryExcavationModule: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Save Artwork Dialog */}
+      <SaveArtworkDialog
+        isOpen={showSaveDialog}
+        onClose={() => setShowSaveDialog(false)}
+        labModule="poetry-excavation"
+        labCategory="visual"
+        content={{
+          text: collected.join(" "),
+          html: `<div class="poetry-excavation-result">${collected
+            .map((word) => `<span class="excavated-word">${word}</span>`)
+            .join(" ")}</div>`,
+          data: {
+            sourcePoem: poem,
+            excavationSettings: {
+              brushSize,
+              depth,
+            },
+            discoveredArtifacts: artifacts
+              .filter((a) => a.discovered)
+              .map((a) => ({
+                word: a.word,
+                depth: a.depth,
+                confidence: a.confidence,
+              })),
+            collectedWords: collected,
+            stats,
+          },
+        }}
+        screenshot={captureScreenshot()}
+      />
     </div>
   );
 };

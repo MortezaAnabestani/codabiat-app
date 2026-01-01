@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
-import { Box, Circle, Activity, Settings, Maximize, RefreshCw, Zap, Hand } from "lucide-react";
+import { Box, Circle, Activity, Settings, Maximize, RefreshCw, Zap, Hand, Save } from "lucide-react";
+import SaveArtworkDialog from "../SaveArtworkDialog";
 
 type ShapeType = "sphere" | "cube" | "torus" | "icosa";
 
@@ -11,8 +12,11 @@ export const TextOrbModule: React.FC = () => {
   const [shape, setShape] = useState<ShapeType>("torus");
   const [autoRotate, setAutoRotate] = useState(true);
   const [speed, setSpeed] = useState(0.5);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
 
   const sceneRef = useRef<THREE.Scene | null>(null);
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const meshGroupRef = useRef<THREE.Group | null>(null);
   const particlesRef = useRef<THREE.Points | null>(null);
 
@@ -31,10 +35,12 @@ export const TextOrbModule: React.FC = () => {
 
     const camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000);
     camera.position.z = 18;
+    cameraRef.current = camera;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    rendererRef.current = renderer;
     mountRef.current.appendChild(renderer.domElement);
 
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -231,6 +237,17 @@ export const TextOrbModule: React.FC = () => {
     meshGroupRef.current.add(wireframe);
   }, [text, shape]);
 
+  const captureThreeJsScreenshot = () => {
+    if (!rendererRef.current || !sceneRef.current || !cameraRef.current) return undefined;
+    try {
+      rendererRef.current.render(sceneRef.current, cameraRef.current);
+      return rendererRef.current.domElement.toDataURL('image/png');
+    } catch (error) {
+      console.error('Error capturing screenshot:', error);
+      return undefined;
+    }
+  };
+
   return (
     // کانتینر اصلی: "The Void" - میز طراح
     <div className="h-full flex flex-col relative overflow-hidden bg-[#1a051a]">
@@ -328,7 +345,7 @@ export const TextOrbModule: React.FC = () => {
             </div>
 
             {/* دکمه اکشن: Action Button Style */}
-            <div className="pt-2">
+            <div className="pt-2 space-y-3">
               <button
                 onClick={() => setAutoRotate(!autoRotate)}
                 className={`w-full py-3 text-xs font-black font-mono border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all flex items-center justify-center gap-2 uppercase ${
@@ -339,6 +356,20 @@ export const TextOrbModule: React.FC = () => {
               >
                 {autoRotate ? <RefreshCw size={14} className="animate-spin" /> : <Hand size={14} />}
                 {autoRotate ? "AUTO_ROTATE: ENGAGED" : "AUTO_ROTATE: HALTED"}
+              </button>
+
+              {/* Save Button */}
+              <button
+                onClick={() => setShowSaveDialog(true)}
+                disabled={!text.trim()}
+                className={`w-full py-3 text-xs font-black font-mono border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all flex items-center justify-center gap-2 uppercase ${
+                  !text.trim()
+                    ? "bg-gray-400 text-gray-600 cursor-not-allowed opacity-50"
+                    : "bg-[#E07000] text-white hover:bg-[#F08010]" // Mutant Orange
+                }`}
+              >
+                <Save size={14} />
+                SAVE ARTWORK
               </button>
             </div>
           </div>
@@ -364,6 +395,24 @@ export const TextOrbModule: React.FC = () => {
       <div className="absolute bottom-10 right-10 font-black text-6xl text-white/5 rotate-[-10deg]  select-none font-mono z-0">
         DATA...
       </div>
+
+      {/* Save Artwork Dialog */}
+      <SaveArtworkDialog
+        isOpen={showSaveDialog}
+        onClose={() => setShowSaveDialog(false)}
+        labModule="text-orb"
+        labCategory="spatial"
+        content={{
+          text: text,
+          data: {
+            text: text,
+            shape: shape,
+            rotation: speed,
+            autoRotate: autoRotate,
+          },
+        }}
+        screenshot={captureThreeJsScreenshot()}
+      />
     </div>
   );
 };

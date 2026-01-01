@@ -12,7 +12,9 @@ import {
   Zap,
   Skull,
   Hand,
+  Save,
 } from "lucide-react";
+import SaveArtworkDialog from "./SaveArtworkDialog";
 
 interface GlitchSettings {
   rgbShift: number; // 0 to 50
@@ -30,6 +32,7 @@ export const PixelGlitchModule: React.FC = () => {
   const [img, setImg] = useState<HTMLImageElement | null>(null);
   const [status, setStatus] = useState("READY PLAYER ONE...");
   const [isDragging, setIsDragging] = useState(false);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
 
   // Settings State
   const [settings, setSettings] = useState<GlitchSettings>({
@@ -443,6 +446,22 @@ export const PixelGlitchModule: React.FC = () => {
               </div>
             )}
           </div>
+
+          {/* Save Artwork Button */}
+          <button
+            onClick={() => setShowSaveDialog(true)}
+            disabled={!img}
+            className={`w-full py-3 font-black text-sm uppercase border-4 border-black shadow-[4px_4px_0px_#000] flex items-center justify-center gap-2 transition-all
+                        ${
+                          img
+                            ? "bg-[#006000] text-white hover:bg-[#007000] active:translate-y-1 active:shadow-none"
+                            : "bg-gray-600 text-gray-400 cursor-not-allowed"
+                        }
+                    `}
+          >
+            <Save size={20} />
+            SAVE ARTWORK
+          </button>
         </div>
 
         {/* RIGHT PANEL: CANVAS (The Main Page) */}
@@ -493,6 +512,25 @@ export const PixelGlitchModule: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Save Artwork Dialog */}
+      <SaveArtworkDialog
+        isOpen={showSaveDialog}
+        onClose={() => setShowSaveDialog(false)}
+        labModule="pixel-glitch"
+        labCategory="visual"
+        content={{
+          text: settings.textOverlay ? settings.textValue : "",
+          html: settings.textOverlay
+            ? `<div style="font-family: monospace; padding: 20px; direction: rtl;">${settings.textValue}</div>`
+            : "",
+          data: {
+            settings,
+            hasImage: !!img,
+          },
+        }}
+        screenshot={canvasRef.current?.toDataURL("image/png")}
+      />
     </div>
   );
 };

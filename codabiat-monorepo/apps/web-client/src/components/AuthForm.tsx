@@ -1,21 +1,52 @@
 import React, { useState } from "react";
-import { Mail, Lock, User, Zap, Skull, ArrowRight } from "lucide-react";
+import { Mail, Lock, User, Zap, Skull, ArrowRight, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
 const AuthForm: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const { login, register } = useAuth();
+
+  // Form fields
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
+    setSuccess(null);
 
-    // شبیه‌سازی افکت "Page Turn" سگا
-    setTimeout(() => {
+    try {
+      if (isLogin) {
+        // Login
+        await login(email, password);
+        setSuccess("ورود موفقیت‌آمیز! در حال هدایت...");
+      } else {
+        // Register
+        if (!name.trim()) {
+          setError("لطفاً نام خود را وارد کنید");
+          setLoading(false);
+          return;
+        }
+        await register(name, email, password);
+        setSuccess("ثبت‌نام موفقیت‌آمیز! در حال هدایت...");
+      }
+
+      // Navigate to dashboard after successful auth
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 1000);
+    } catch (err: any) {
+      setError(err.message || "خطایی رخ داد. لطفاً دوباره تلاش کنید.");
       setLoading(false);
-      navigate("/dashboard");
-    }, 1500);
+    }
   };
 
   return (
@@ -82,6 +113,8 @@ const AuthForm: React.FC = () => {
                     placeholder="SKETCH TURNER..."
                     dir="auto"
                     required={!isLogin}
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
                   />
                 </div>
               </div>
@@ -102,6 +135,8 @@ const AuthForm: React.FC = () => {
                   placeholder="USER@SEGA.NET"
                   dir="ltr"
                   required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
             </div>
@@ -121,9 +156,23 @@ const AuthForm: React.FC = () => {
                   placeholder="********"
                   dir="ltr"
                   required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
             </div>
+
+            {/* Error/Success Messages */}
+            {(error || success) && (
+              <div className={`border-2 border-black p-3 flex items-start gap-2 ${
+                error ? 'bg-red-100' : 'bg-green-100'
+              }`}>
+                <AlertCircle size={20} className={error ? 'text-red-600' : 'text-green-600'} />
+                <p className={`text-sm font-bold ${error ? 'text-red-800' : 'text-green-800'}`} dir="rtl">
+                  {error || success}
+                </p>
+              </div>
+            )}
 
             {/* [3. THE MORTUS HAND MECHANIC] - دکمه اکشن */}
             <div className="pt-6">

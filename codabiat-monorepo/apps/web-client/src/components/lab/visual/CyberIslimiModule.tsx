@@ -9,7 +9,9 @@ import {
   Palette,
   Snowflake,
   Zap, // Replaced Sun/Moon with Zap for comic feel
+  Save,
 } from "lucide-react";
+import SaveArtworkDialog from "../SaveArtworkDialog";
 
 type PaletteType = "mutant" | "sludge" | "sketch" | "bruised";
 
@@ -24,6 +26,8 @@ export const CyberIslimiModule: React.FC = () => {
   const [brushSize, setBrushSize] = useState(24);
   const [autoRotate, setAutoRotate] = useState(false);
   const [palette, setPalette] = useState<PaletteType>("mutant");
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [hasContent, setHasContent] = useState(false);
 
   // Ref to pass state to P5
   const stateRef = useRef({ brushText, symmetry, mirrorMode, brushSize, autoRotate, palette });
@@ -62,6 +66,7 @@ export const CyberIslimiModule: React.FC = () => {
         }
 
         if (p.mouseIsPressed && p.mouseX > 0 && p.mouseX < p.width && p.mouseY > 0 && p.mouseY < p.height) {
+          setHasContent(true);
           const mx = p.mouseX - p.width / 2;
           const my = p.mouseY - p.height / 2;
           const pmx = p.pmouseX - p.width / 2;
@@ -139,6 +144,7 @@ export const CyberIslimiModule: React.FC = () => {
   const clearCanvas = () => {
     if (p5Instance.current) {
       p5Instance.current.background(20);
+      setHasContent(false);
       // Flash effect for "Page Tear"
       const flash = document.getElementById("flash-overlay");
       if (flash) {
@@ -151,6 +157,17 @@ export const CyberIslimiModule: React.FC = () => {
   const downloadCanvas = () => {
     if (p5Instance.current) {
       p5Instance.current.saveCanvas("comix_zone_artifact", "png");
+    }
+  };
+
+  const canvasToDataURL = () => {
+    if (!p5Instance.current) return undefined;
+    try {
+      const canvas = p5Instance.current.canvas;
+      return canvas.toDataURL("image/png");
+    } catch (error) {
+      console.error("Failed to capture canvas:", error);
+      return undefined;
     }
   };
 
@@ -181,14 +198,19 @@ export const CyberIslimiModule: React.FC = () => {
           <Eraser size={24} className="text-black" />
         </button>
 
-        {/* Slot 2: Save */}
+        {/* Slot 2: Save Artwork */}
         <button
-          onClick={downloadCanvas}
-          className="group relative w-12 h-12 bg-emerald-700 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center"
+          onClick={() => setShowSaveDialog(true)}
+          disabled={!hasContent}
+          className={`group relative w-12 h-12 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all flex items-center justify-center ${
+            hasContent
+              ? "bg-emerald-700 active:translate-y-1 active:shadow-none"
+              : "bg-gray-400 cursor-not-allowed"
+          }`}
           title="Save Artifact"
         >
           <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity"></div>
-          <Download size={24} className="text-white" />
+          <Save size={24} className={hasContent ? "text-white" : "text-gray-600"} />
         </button>
       </div>
 
@@ -339,6 +361,26 @@ export const CyberIslimiModule: React.FC = () => {
           POW!
         </h1>
       </div>
+
+      {/* Save Artwork Dialog */}
+      <SaveArtworkDialog
+        isOpen={showSaveDialog}
+        onClose={() => setShowSaveDialog(false)}
+        labModule="cyber-islimi"
+        labCategory="visual"
+        content={{
+          text: brushText,
+          data: {
+            text: brushText,
+            symmetry: symmetry,
+            mirrorMode: mirrorMode,
+            brushSize: brushSize,
+            autoRotate: autoRotate,
+            palette: palette,
+          },
+        }}
+        screenshot={canvasToDataURL()}
+      />
     </div>
   );
 };

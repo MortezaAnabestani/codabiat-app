@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Settings, Eraser, Download, PenTool, Palette, Sparkles, Sliders, Zap, Skull } from "lucide-react";
+import { Settings, Eraser, Download, PenTool, Palette, Sparkles, Sliders, Zap, Skull, Save } from "lucide-react";
+import SaveArtworkDialog from "../SaveArtworkDialog";
 
 type PaletteType = "neon" | "fire" | "ice" | "mono";
 
@@ -26,6 +27,8 @@ export const AlgorithmicCalligraphyModule: React.FC = () => {
   const [chaos, setChaos] = useState(2);
   const [palette, setPalette] = useState<PaletteType>("neon");
   const [isDrawing, setIsDrawing] = useState(false);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [hasContent, setHasContent] = useState(false);
 
   // Refs for accessing state inside P5 closure
   const stateRef = useRef({ brushText, brushSize, chaos, palette });
@@ -88,6 +91,7 @@ export const AlgorithmicCalligraphyModule: React.FC = () => {
               rotationSpeed: p.random(-0.1, 0.1),
             });
           }
+          setHasContent(true);
         } else {
           setIsDrawing(false);
         }
@@ -141,12 +145,24 @@ export const AlgorithmicCalligraphyModule: React.FC = () => {
   const clearCanvas = () => {
     if (p5Instance.current) {
       p5Instance.current.background(5);
+      setHasContent(false);
     }
   };
 
   const downloadCanvas = () => {
     if (p5Instance.current) {
       p5Instance.current.saveCanvas("comix_zone_art", "png");
+    }
+  };
+
+  const canvasToDataURL = () => {
+    if (!p5Instance.current) return undefined;
+    try {
+      const canvas = p5Instance.current.canvas;
+      return canvas.toDataURL("image/png");
+    } catch (error) {
+      console.error("Error converting canvas to data URL:", error);
+      return undefined;
     }
   };
 
@@ -298,7 +314,7 @@ export const AlgorithmicCalligraphyModule: React.FC = () => {
             </div>
           </button>
 
-          {/* SLOT 2: SAVE (DISK) */}
+          {/* SLOT 2: DOWNLOAD */}
           <button
             onClick={downloadCanvas}
             className="group relative bg-[#222] border-4 border-[#FFCC00] h-16 flex items-center justify-center hover:bg-[#333] active:translate-y-1 transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
@@ -306,11 +322,45 @@ export const AlgorithmicCalligraphyModule: React.FC = () => {
             <div className="absolute top-1 left-1 text-[10px] text-[#FFCC00] font-mono">ITEM_02</div>
             <div className="flex flex-col items-center">
               <Download className="text-cyan-400 w-6 h-6 group-hover:animate-pulse" />
-              <span className="text-[#FFCC00] text-[10px] font-black mt-1 uppercase">SAVE</span>
+              <span className="text-[#FFCC00] text-[10px] font-black mt-1 uppercase">DOWNLOAD</span>
             </div>
           </button>
         </div>
+
+        {/* SAVE ARTWORK BUTTON */}
+        <button
+          onClick={() => setShowSaveDialog(true)}
+          disabled={!hasContent}
+          className={`w-full py-4 font-black text-sm uppercase border-4 border-black shadow-[4px_4px_0px_#000] flex items-center justify-center gap-3 transition-all
+              ${
+                hasContent
+                  ? "bg-[#006000] text-white hover:bg-[#007000] active:translate-y-1 active:shadow-none"
+                  : "bg-gray-400 text-gray-600 cursor-not-allowed"
+              }
+          `}
+        >
+          <Save size={20} />
+          SAVE ARTWORK
+        </button>
       </div>
+
+      {/* Save Artwork Dialog */}
+      <SaveArtworkDialog
+        isOpen={showSaveDialog}
+        onClose={() => setShowSaveDialog(false)}
+        labModule="algorithmic-calligraphy"
+        labCategory="visual"
+        content={{
+          text: brushText,
+          data: {
+            text: brushText,
+            brushSize: brushSize,
+            chaos: chaos,
+            palette: palette,
+          },
+        }}
+        screenshot={canvasToDataURL()}
+      />
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
-import { Eye, Wind, Layers, Zap, Skull, Hand } from "lucide-react"; // Added icons for Sega vibe
+import { Eye, Wind, Layers, Zap, Skull, Hand, Save } from "lucide-react"; // Added icons for Sega vibe
+import SaveArtworkDialog from "../SaveArtworkDialog";
 
 const fragments = [
   "در زندگی زخم‌هایی هست",
@@ -29,9 +30,11 @@ export const BlindOwlModule: React.FC = () => {
   const mountRef = useRef<HTMLDivElement>(null);
   const [speed, setSpeed] = useState(1);
   const [turbulence, setTurbulence] = useState(0.5);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
 
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const itemsRef = useRef<THREE.Group | null>(null);
   const particlesRef = useRef<THREE.Points | null>(null);
   const mouseRef = useRef({ x: 0, y: 0 });
@@ -61,7 +64,8 @@ export const BlindOwlModule: React.FC = () => {
     cameraRef.current = camera;
     camera.position.z = 5;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, preserveDrawingBuffer: true });
+    rendererRef.current = renderer;
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     mountRef.current.appendChild(renderer.domElement);
@@ -208,6 +212,18 @@ export const BlindOwlModule: React.FC = () => {
     };
   }, [speed, turbulence]);
 
+  // Screenshot capture function
+  const captureScreenshot = (): string => {
+    if (!rendererRef.current) return "";
+    return rendererRef.current.domElement.toDataURL("image/png");
+  };
+
+  // Get current text content from scene
+  const getCurrentText = (): string => {
+    if (!itemsRef.current) return "";
+    return fragments.join(" • ");
+  };
+
   return (
     // --- THE VOID (Artist's Desk Background) ---
     <div className="h-full w-full relative bg-[#1a1a1a] p-6 flex items-center justify-center overflow-hidden font-mono">
@@ -226,6 +242,14 @@ export const BlindOwlModule: React.FC = () => {
             <Eye size={16} className="text-black mb-1" />
             <span className="text-[8px] font-bold text-[#E07000]">{(speed * 100).toFixed(0)}m</span>
           </div>
+          {/* Slot 3: Save Button */}
+          <button
+            onClick={() => setShowSaveDialog(true)}
+            className="bg-[#006000] border-2 border-black p-1 w-12 h-12 flex items-center justify-center shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-[#007000] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 transition-all active:translate-y-0 active:shadow-none"
+            title="Save Artwork"
+          >
+            <Save size={16} className="text-white" />
+          </button>
         </div>
 
         {/* --- DECORATIVE: ONOMATOPOEIA (Behind UI, Top Left) --- */}
@@ -297,6 +321,34 @@ export const BlindOwlModule: React.FC = () => {
           style={{ clipPath: "polygon(100% 0, 0% 100%, 100% 100%)" }}
         ></div>
       </div>
+
+      {/* Save Artwork Dialog */}
+      <SaveArtworkDialog
+        isOpen={showSaveDialog}
+        onClose={() => setShowSaveDialog(false)}
+        labModule="blind-owl"
+        labCategory="spatial"
+        content={{
+          text: getCurrentText(),
+          data: {
+            text: getCurrentText(),
+            speed,
+            turbulence,
+            cameraPosition: cameraRef.current ? {
+              x: cameraRef.current.position.x,
+              y: cameraRef.current.position.y,
+              z: cameraRef.current.position.z,
+            } : null,
+            sceneSettings: {
+              fogDensity: 0.02,
+              backgroundColor: "#500050",
+              particlesCount: 2000,
+              fragmentsCount: 40,
+            },
+          },
+        }}
+        screenshot={captureScreenshot()}
+      />
     </div>
   );
 };

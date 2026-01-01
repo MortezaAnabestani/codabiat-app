@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
-import { BoxSelect, Move, Anchor, Zap, RefreshCcw, Wind, Magnet, Hand, Skull } from "lucide-react";
+import { BoxSelect, Move, Anchor, Zap, RefreshCcw, Wind, Magnet, Hand, Skull, Save } from "lucide-react";
+import SaveArtworkDialog from "./SaveArtworkDialog";
 
 export const PhysicsTextModule: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -11,6 +12,7 @@ export const PhysicsTextModule: React.FC = () => {
   const [restitution, setRestitution] = useState(0.8);
   const [interactionMode, setInteractionMode] = useState<"drag" | "magnet" | "push">("drag");
   const [wordCount, setWordCount] = useState(0);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
 
   // Physics Refs
   const engineRef = useRef<any>(null);
@@ -475,8 +477,44 @@ export const PhysicsTextModule: React.FC = () => {
               />
             </div>
           </div>
+
+          {/* Save Artwork Button */}
+          <button
+            onClick={() => setShowSaveDialog(true)}
+            disabled={wordCount === 0}
+            className={`w-full py-3 font-black text-sm uppercase border-4 border-black shadow-[4px_4px_0px_#000] flex items-center justify-center gap-2 transition-all font-pixel
+                        ${
+                          wordCount > 0
+                            ? "bg-[#006000] text-white hover:bg-[#007000] active:translate-y-1 active:shadow-none"
+                            : "bg-gray-600 text-gray-400 cursor-not-allowed"
+                        }
+                    `}
+          >
+            <Save size={20} />
+            SAVE ARTWORK
+          </button>
         </div>
       </div>
+
+      {/* Save Artwork Dialog */}
+      <SaveArtworkDialog
+        isOpen={showSaveDialog}
+        onClose={() => setShowSaveDialog(false)}
+        labModule="physics-text"
+        labCategory="visual"
+        content={{
+          text: inputText,
+          html: `<div style="font-family: 'Vazirmatn', Arial; padding: 20px; direction: rtl;">${inputText}</div>`,
+          data: {
+            inputText,
+            gravity,
+            restitution,
+            interactionMode,
+            wordCount,
+          },
+        }}
+        screenshot={canvasRef.current?.toDataURL("image/png")}
+      />
     </div>
   );
 };

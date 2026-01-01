@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Bomb, Skull, HandMetal, Zap, Send, Menu, X, ChevronRight, AlertTriangle } from "lucide-react";
+import { Bomb, Skull, HandMetal, Zap, Send, Menu, X, ChevronRight, AlertTriangle, Save } from "lucide-react";
 import { interactWithStory } from "../../../services/geminiService";
+import SaveArtworkDialog from "../SaveArtworkDialog";
 
 // --- 1. THEME CONSTANTS (SEGA GENESIS PALETTE) ---
 const THEME = {
@@ -173,6 +174,7 @@ export const InteractiveFictionModule: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState<GameStats>({ hp: 100, ink: 80, page: 1 });
   const [actions, setActions] = useState(["بررسی لوله", "مشت زدن به دیوار", "فریاد زدن"]);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -355,6 +357,24 @@ export const InteractiveFictionModule: React.FC = () => {
                 <Send size={20} />
               </button>
             </div>
+
+            {/* Save Button */}
+            <div className="mt-4 max-w-2xl mx-auto">
+              <button
+                onClick={() => setShowSaveDialog(true)}
+                disabled={messages.length <= 2}
+                className={`w-full py-4 font-black text-sm uppercase border-4 border-black shadow-[4px_4px_0px_#000] flex items-center justify-center gap-3 transition-all
+                    ${
+                      messages.length > 2
+                        ? "bg-[#006000] text-white hover:bg-[#007000] active:translate-y-1 active:shadow-none"
+                        : "bg-gray-400 text-gray-600 cursor-not-allowed"
+                    }
+                `}
+              >
+                <Save size={20} />
+                SAVE ARTWORK
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -364,7 +384,7 @@ export const InteractiveFictionModule: React.FC = () => {
         .font-bangers { font-family: 'Bangers', cursive; }
         .font-vt323 { font-family: 'VT323', monospace; }
         .font-comic { font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif; } /* Fallback if custom font fails */
-        
+
         /* Custom Scrollbar for that retro feel */
         .custom-scrollbar::-webkit-scrollbar {
             width: 12px;
@@ -375,6 +395,30 @@ export const InteractiveFictionModule: React.FC = () => {
             border: 2px solid #000;
         }
       `}</style>
+
+      {/* Save Artwork Dialog */}
+      <SaveArtworkDialog
+        isOpen={showSaveDialog}
+        onClose={() => setShowSaveDialog(false)}
+        labModule="interactive-fiction"
+        labCategory="narrative"
+        content={{
+          text: messages.map((m) => `${m.sender}: ${m.text}`).join("\n"),
+          html: messages
+            .map(
+              (m) =>
+                `<div class="message-${m.sender}">${m.text}</div>`
+            )
+            .join(""),
+          data: {
+            scenes: messages.filter((m) => m.sender === "ai"),
+            choices: messages.filter((m) => m.sender === "user"),
+            currentPath: actions,
+            variables: stats,
+            endingReached: null,
+          },
+        }}
+      />
     </div>
   );
 };

@@ -14,7 +14,9 @@ import {
   Hand,
   PenTool,
   XCircle,
+  Save,
 } from "lucide-react";
+import SaveArtworkDialog from "../SaveArtworkDialog";
 
 interface GlitchState {
   entropy: number;
@@ -36,6 +38,7 @@ export const GlitchModule: React.FC = () => {
   const [output, setOutput] = useState("");
   const [frame, setFrame] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
 
   // Zalgo / Corruption Logic (Logic Preserved 100%)
   const zalgoUp = [
@@ -276,6 +279,22 @@ export const GlitchModule: React.FC = () => {
             {state.isBreached ? <XCircle size={20} /> : <Play size={20} />}
             {state.isBreached ? "SYSTEM_CRITICAL!" : "INITIATE_SEQUENCE"}
           </button>
+
+          {/* Save Artwork Button */}
+          <button
+            onClick={() => setShowSaveDialog(true)}
+            disabled={!output}
+            className={`w-full py-4 font-black text-sm uppercase border-4 border-black shadow-[4px_4px_0px_#000] flex items-center justify-center gap-3 transition-all
+                        ${
+                          output
+                            ? "bg-[#006000] text-white hover:bg-[#007000] active:translate-y-1 active:shadow-none"
+                            : "bg-gray-400 text-gray-600 cursor-not-allowed"
+                        }
+                    `}
+          >
+            <Save size={20} />
+            SAVE_ARTWORK
+          </button>
         </div>
 
         {/* RIGHT COLUMN: THE COMIC PANEL (Output) */}
@@ -384,6 +403,24 @@ export const GlitchModule: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Save Artwork Dialog */}
+      <SaveArtworkDialog
+        isOpen={showSaveDialog}
+        onClose={() => setShowSaveDialog(false)}
+        labModule="glitch"
+        labCategory="text"
+        content={{
+          text: output,
+          html: `<div style="font-size: 4rem; font-weight: 900; text-align: center;">${output}</div>`,
+          data: {
+            input,
+            settings: state,
+            mode: state.mode,
+            entropy: state.entropy,
+          },
+        }}
+      />
     </div>
   );
 };

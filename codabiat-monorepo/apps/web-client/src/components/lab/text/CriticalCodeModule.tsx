@@ -18,8 +18,10 @@ import {
   Skull, // Added for "Mortus" feel
   Hand, // Added for "Hand" mechanic representation
   X, // For closing/reset
+  Save,
 } from "lucide-react";
 import { generateStreamingContent } from "../../../services/geminiService";
+import SaveArtworkDialog from "../SaveArtworkDialog";
 
 // --- DESIGN SYSTEM CONSTANTS ---
 const PALETTE = {
@@ -59,6 +61,7 @@ function authenticate(user) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [activeLens, setActiveLens] = useState<string>("ideology");
   const [scanProgress, setScanProgress] = useState(0);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
   const outputRef = useRef<HTMLDivElement>(null);
 
   // --- LOGIC PRESERVED ---
@@ -354,8 +357,12 @@ function authenticate(user) {
                 <button className="hover:text-[#E07000] transition-colors">
                   <Share2 size={14} />
                 </button>
-                <button className="hover:text-[#E07000] transition-colors">
-                  <Download size={14} />
+                <button
+                  onClick={() => setShowSaveDialog(true)}
+                  disabled={!analysis}
+                  className={`transition-colors ${analysis ? "hover:text-[#E07000] cursor-pointer" : "text-gray-300 cursor-not-allowed"}`}
+                >
+                  <Save size={14} />
                 </button>
               </div>
             </div>
@@ -368,6 +375,23 @@ function authenticate(user) {
         className="absolute bottom-0 right-0 w-16 h-16 bg-gradient-to-tl from-gray-300 to-transparent pointer-events-none opacity-50"
         style={{ clipPath: "polygon(100% 0, 100% 100%, 0 100%)" }}
       ></div>
+
+      {/* Save Artwork Dialog */}
+      <SaveArtworkDialog
+        isOpen={showSaveDialog}
+        onClose={() => setShowSaveDialog(false)}
+        labModule="critical-code"
+        labCategory="text"
+        content={{
+          text: analysis,
+          html: `<div style="background: white; border: 2px solid black; padding: 24px; font-family: monospace; white-space: pre-wrap;">${analysis}</div>`,
+          data: {
+            code,
+            analysis,
+            lens: activeLens,
+          },
+        }}
+      />
     </div>
   );
 };

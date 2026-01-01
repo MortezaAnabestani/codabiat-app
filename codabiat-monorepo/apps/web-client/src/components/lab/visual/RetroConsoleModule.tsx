@@ -11,7 +11,9 @@ import {
   Skull,
   Scroll,
   Hand,
+  Save,
 } from "lucide-react";
+import SaveArtworkDialog from "../SaveArtworkDialog";
 
 // --- TYPES ---
 interface Tile {
@@ -87,8 +89,10 @@ export const RetroConsoleModule: React.FC = () => {
   const [collectedWords, setCollectedWords] = useState<string[]>([]);
   const [gameState, setGameState] = useState<"playing" | "won" | "lost" | "idle">("idle");
   const [logs, setLogs] = useState<string[]>([]);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
 
   const audioContextRef = useRef<AudioContext | null>(null);
+  const gameContainerRef = useRef<HTMLDivElement>(null);
 
   // --- Audio Feedback (UNCHANGED) ---
   const playBeep = (freq: number, type: OscillatorType = "square", dur = 0.1) => {
@@ -315,6 +319,19 @@ export const RetroConsoleModule: React.FC = () => {
           >
             <RefreshCw size={28} className="text-white animate-spin-slow" />
           </button>
+
+          {/* Action: Save Artwork */}
+          <button
+            onClick={() => setShowSaveDialog(true)}
+            disabled={gameState === "idle"}
+            className={`inventory-slot w-16 h-16 flex flex-col items-center justify-center cursor-pointer transition-all ${
+              gameState !== "idle"
+                ? "bg-gradient-to-br from-green-600 to-green-800 hover:scale-110 active:scale-95"
+                : "bg-gray-600 cursor-not-allowed opacity-50"
+            }`}
+          >
+            <Save size={28} className="text-white" />
+          </button>
         </div>
       </div>
 
@@ -480,6 +497,27 @@ export const RetroConsoleModule: React.FC = () => {
           </span>
         </div>
       )}
+
+      {/* Save Artwork Dialog */}
+      <SaveArtworkDialog
+        isOpen={showSaveDialog}
+        onClose={() => setShowSaveDialog(false)}
+        labModule="retro-console"
+        labCategory="visual"
+        content={{
+          text: collectedWords.join(" "),
+          html: `<div style="font-family: monospace; padding: 20px; direction: rtl;">${collectedWords.join(" ")}</div>`,
+          data: {
+            gameState,
+            score,
+            integrity,
+            collectedWords,
+            logs,
+            gridSize: GRID_SIZE,
+          },
+        }}
+        screenshot={undefined}
+      />
     </div>
   );
 };

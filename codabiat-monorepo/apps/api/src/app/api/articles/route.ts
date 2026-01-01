@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase, Article } from '@codabiat/database';
 import { withAuth } from '@codabiat/auth';
+import { handleCors, handleOptions } from '../../../lib/cors';
+
+// OPTIONS /api/articles
+export async function OPTIONS() {
+  return handleOptions();
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -28,7 +34,7 @@ export async function GET(req: NextRequest) {
       Article.countDocuments(query),
     ]);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data: articles,
       pagination: {
@@ -38,12 +44,14 @@ export async function GET(req: NextRequest) {
         totalPages: Math.ceil(total / limit),
       },
     });
+    return handleCors(response);
   } catch (error) {
     console.error('Get articles error:', error);
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
     );
+    return handleCors(response);
   }
 }
 
@@ -55,10 +63,11 @@ export const POST = withAuth(async (req) => {
     const { title, titleEn, content, contentEn, category, tags, coverImage } = body;
 
     if (!title || !content || !category) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
       );
+      return handleCors(response);
     }
 
     const article = await Article.create({
@@ -75,18 +84,20 @@ export const POST = withAuth(async (req) => {
 
     await article.populate('author', 'name email avatar');
 
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         success: true,
         data: article,
       },
       { status: 201 }
     );
+    return handleCors(response);
   } catch (error) {
     console.error('Create article error:', error);
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
     );
+    return handleCors(response);
   }
 });

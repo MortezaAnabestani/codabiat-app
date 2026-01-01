@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
+import html2canvas from "html2canvas";
 import {
   Network,
   Search,
@@ -13,7 +14,9 @@ import {
   Zap,
   Layers,
   X,
+  Save,
 } from "lucide-react";
+import SaveArtworkDialog from "../SaveArtworkDialog";
 
 // --- TYPES ---
 interface Node extends d3.SimulationNodeDatum {
@@ -81,6 +84,20 @@ export const SemanticClusterModule: React.FC = () => {
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [hasVisualization, setHasVisualization] = useState(false);
+  const [screenshot, setScreenshot] = useState<string | undefined>(undefined);
+
+  const captureD3Screenshot = async () => {
+    const element = containerRef.current;
+    if (!element) return undefined;
+
+    const canvas = await html2canvas(element, {
+      backgroundColor: "#f0f0f0",
+      scale: 2,
+    });
+    return canvas.toDataURL("image/png");
+  };
 
   useEffect(() => {
     if (!containerRef.current || !svgRef.current) return;
@@ -231,6 +248,8 @@ export const SemanticClusterModule: React.FC = () => {
       node.attr("transform", (d) => `translate(${d.x},${d.y})`);
     });
 
+    setHasVisualization(true);
+
     // --- Drag Events ---
     function dragstarted(event: any) {
       if (!event.active) simulation.alphaTarget(0.3).restart();
@@ -325,6 +344,26 @@ export const SemanticClusterModule: React.FC = () => {
               <ZoomOut size={18} />
             </button>
           </div>
+
+          {/* Save Button */}
+          <button
+            onClick={async () => {
+              const screenshotData = await captureD3Screenshot();
+              setScreenshot(screenshotData);
+              setShowSaveDialog(true);
+            }}
+            disabled={!hasVisualization}
+            className={`w-full py-3 font-black text-xs uppercase border-4 border-black shadow-[4px_4px_0px_#000] flex items-center justify-center gap-2 transition-all
+              ${
+                hasVisualization
+                  ? "bg-[#006000] text-white hover:bg-[#007000] active:translate-y-1 active:shadow-none"
+                  : "bg-gray-400 text-gray-600 cursor-not-allowed"
+              }
+            `}
+          >
+            <Save size={16} />
+            SAVE ARTWORK
+          </button>
 
           {/* Legend (Comic Strip Style) */}
           <div className="bg-white border-4 border-black p-2 transform rotate-1 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
@@ -462,6 +501,24 @@ export const SemanticClusterModule: React.FC = () => {
         </div>
         <div className="text-[10px] text-gray-500 uppercase">SEGA GENESIS VDP EMULATION</div>
       </div>
+
+      {/* --- SAVE ARTWORK DIALOG --- */}
+      <SaveArtworkDialog
+        isOpen={showSaveDialog}
+        onClose={() => setShowSaveDialog(false)}
+        labModule="semantic-cluster"
+        labCategory="visual"
+        content={{
+          text: searchTerm,
+          data: {
+            nodes: initialData.nodes,
+            links: initialData.links,
+            zoomLevel: zoomLevel,
+            selectedNode: selectedNode?.id,
+          },
+        }}
+        screenshot={screenshot}
+      />
     </div>
   );
 };

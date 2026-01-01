@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Download, PenTool, Skull, Zap, Move, Layers, PaintBucket } from "lucide-react";
+import { Download, PenTool, Skull, Zap, Move, Layers, PaintBucket, Save } from "lucide-react";
+import SaveArtworkDialog from "../SaveArtworkDialog";
 
 type PaletteType = "neon" | "fire" | "ice" | "mono";
 
@@ -26,6 +27,7 @@ export const FractalGardenModule: React.FC = () => {
   const [chaos, setChaos] = useState(2);
   const [palette, setPalette] = useState<PaletteType>("neon");
   const [isDrawing, setIsDrawing] = useState(false);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
 
   // Refs for accessing state inside P5 closure
   const stateRef = useRef({ brushText, brushSize, chaos, palette });
@@ -140,6 +142,13 @@ export const FractalGardenModule: React.FC = () => {
     if (p5Instance.current) {
       p5Instance.current.saveCanvas("comix_zone_art", "png");
     }
+  };
+
+  const getCanvasDataURL = () => {
+    if (p5Instance.current && p5Instance.current.canvas) {
+      return p5Instance.current.canvas.toDataURL("image/png");
+    }
+    return undefined;
   };
 
   return (
@@ -353,7 +362,7 @@ export const FractalGardenModule: React.FC = () => {
             <div className="absolute inset-0 bg-red-500 opacity-0 group-hover:opacity-10 transition-opacity"></div>
           </button>
 
-          {/* SLOT 2: SAVE (Disk) */}
+          {/* SLOT 2: DOWNLOAD (Disk) */}
           <button
             onClick={downloadCanvas}
             className="group relative h-20 bg-[#111] border-4 border-[#FFCC00] shadow-[4px_4px_0px_#000] active:translate-y-1 active:shadow-none transition-all flex flex-col items-center justify-center overflow-hidden"
@@ -366,13 +375,48 @@ export const FractalGardenModule: React.FC = () => {
               strokeWidth={2.5}
             />
             <span className="text-[#FFCC00] text-xs font-black uppercase tracking-widest group-hover:text-white">
-              SAVE
+              DOWNLOAD
             </span>
             {/* Hover Effect */}
             <div className="absolute inset-0 bg-cyan-500 opacity-0 group-hover:opacity-10 transition-opacity"></div>
           </button>
         </div>
+
+        {/* Save Artwork Button */}
+        <button
+          onClick={() => setShowSaveDialog(true)}
+          disabled={!p5Instance.current}
+          className={`w-full py-3 font-black text-sm uppercase border-4 border-black shadow-[4px_4px_0px_#000] flex items-center justify-center gap-2 transition-all
+                      ${
+                        p5Instance.current
+                          ? "bg-[#006000] text-white hover:bg-[#007000] active:translate-y-1 active:shadow-none"
+                          : "bg-gray-600 text-gray-400 cursor-not-allowed"
+                      }
+                  `}
+        >
+          <Save size={20} />
+          SAVE ARTWORK
+        </button>
       </div>
+
+      {/* Save Artwork Dialog */}
+      <SaveArtworkDialog
+        isOpen={showSaveDialog}
+        onClose={() => setShowSaveDialog(false)}
+        labModule="fractal-garden"
+        labCategory="visual"
+        content={{
+          text: brushText,
+          html: `<div style="font-family: monospace; padding: 20px; direction: rtl;">${brushText}</div>`,
+          data: {
+            brushText,
+            brushSize,
+            chaos,
+            palette,
+          },
+        }}
+        screenshot={getCanvasDataURL()}
+      />
     </div>
   );
 };

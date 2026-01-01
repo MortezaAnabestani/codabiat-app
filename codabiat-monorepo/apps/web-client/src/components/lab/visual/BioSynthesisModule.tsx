@@ -11,8 +11,10 @@ import {
   Heart,
   Skull,
   Edit3,
+  Save,
 } from "lucide-react";
 import { mutateWords } from "../../../services/geminiService";
+import SaveArtworkDialog from "../SaveArtworkDialog";
 
 // --- COMIX ZONE PALETTE ---
 const PALETTE = {
@@ -48,6 +50,7 @@ export const BioSynthesisModule: React.FC = () => {
   const [population, setPopulation] = useState(0);
   const [isSimulating, setIsSimulating] = useState(true);
   const [inputText, setInputText] = useState("خورشید");
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
 
   const requestRef = useRef<number>(0);
   const orgsRef = useRef<Organism[]>([]);
@@ -217,6 +220,16 @@ export const BioSynthesisModule: React.FC = () => {
     seeds.forEach((s) => spawnOrganism(s));
   }, []);
 
+  const canvasToDataURL = () => {
+    if (!canvasRef.current) return undefined;
+    try {
+      return canvasRef.current.toDataURL("image/png");
+    } catch (error) {
+      console.error("Failed to capture canvas:", error);
+      return undefined;
+    }
+  };
+
   return (
     // MAIN CONTAINER: The "Artist's Desk" (Void Background)
     <div className="h-full flex flex-col lg:flex-row bg-[#1a1a1a] overflow-hidden font-mono relative">
@@ -341,6 +354,20 @@ export const BioSynthesisModule: React.FC = () => {
             <Skull size={24} strokeWidth={3} />
             <span className="text-[10px] font-black uppercase bg-black text-white px-1">NUKE</span>
           </button>
+
+          {/* Slot 3: Save Artwork */}
+          <button
+            onClick={() => setShowSaveDialog(true)}
+            disabled={population === 0}
+            className={`col-span-2 aspect-[2/1] border-4 border-black flex flex-col items-center justify-center gap-1 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all ${
+              population > 0
+                ? "bg-emerald-700 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
+                : "bg-gray-400 cursor-not-allowed"
+            }`}
+          >
+            <Save size={24} strokeWidth={3} className={population > 0 ? "text-white" : "text-gray-600"} />
+            <span className="text-[10px] font-black uppercase bg-black text-white px-1">SAVE</span>
+          </button>
         </div>
       </div>
 
@@ -385,6 +412,28 @@ export const BioSynthesisModule: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Save Artwork Dialog */}
+      <SaveArtworkDialog
+        isOpen={showSaveDialog}
+        onClose={() => setShowSaveDialog(false)}
+        labModule="bio-synthesis"
+        labCategory="visual"
+        content={{
+          text: `Population: ${population}, Mutation Rate: ${(mutationRate * 100).toFixed(0)}%`,
+          data: {
+            population: population,
+            mutationRate: mutationRate,
+            semanticGravity: semanticGravity,
+            organisms: orgsRef.current.map((o) => ({
+              text: o.text,
+              energy: o.energy,
+              age: o.age,
+            })),
+          },
+        }}
+        screenshot={canvasToDataURL()}
+      />
     </div>
   );
 };
